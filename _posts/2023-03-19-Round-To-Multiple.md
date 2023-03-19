@@ -10,7 +10,7 @@ Rounding is one of the recurring challenges in software engineering.
 While there are standard solutions (`std::round` and friends) to "rounding floating-point to whole number" problem,
 there is an entirely different class of rounding problems in the wild:
 
-> Round N to multiple of M.
+**Round N to multiple of M.**
 
 For example, given `N = 17` and `M = 10`:
 
@@ -24,15 +24,16 @@ For example, finance: the price of a security must be multiple of "tick size" (i
 
 ## Problem
 
-Our goal today is to implement the following:
+Our goal is to implement the following:
 
 - `int round_up(int n, int m)`
   - Return the smallest multiple of `m` that is greater than or equal to `n`
-  - Constraints:
-    - `m > 0`
-    - The result is representable by the type `int`
 
-Once we have `round_up`, we can modify the solution to implement the following as well:
+Constraints:
+  - `m > 0`
+  - The result is representable by the type `int`
+
+Once we have `round_up`, we can implement the following as well:
 - `int round_dn(int n, int m)`
   - Return the largest multiple of `m` that is less than or equal to `n`
 - `int round_closest(int n, int m)`
@@ -43,7 +44,7 @@ We'll talk about floating-point variations (e,g., `double round_up(double n, dou
 
 ## Solution
 
-I originally tried ChatGPT first, but it is not yet available in my region. So let's look at StackOverflow instead (which ChatGPT probably learned from anyway).
+I tried ChatGPT first, but it is not yet available in my region. So let's look at StackOverflow instead (which ChatGPT probably learned from anyway).
 
 
 ### The StackOverflow Solution 1
@@ -71,7 +72,7 @@ The last expression
 numToRound + multiple - remainder
 ```
 
-does the "rounding up". It mostly works, but ...
+does the rounding up. It mostly works, but ...
 
 Consider `roundUp(2147483644, 5)` (assuming `int` is 32-bit).
 
@@ -84,21 +85,31 @@ The fix is simple - we subtract `remainder` first:
 numToRound - remainder + multiple
 ```
 
-Now let's look at the 2nd version, where negative `N`s are supported.
-
-The handling of negative numbers is here:
+Now let's look at the 2nd version, where negative `N`s are supported:
 
 ```cpp
+int roundUp(int numToRound, int multiple)
+{
+    if (multiple == 0)
+        return numToRound;
+
+    int remainder = abs(numToRound) % multiple;
+    if (remainder == 0)
+        return numToRound;
+
     if (numToRound < 0)
         return -(abs(numToRound) - remainder);
+    else
+        return numToRound + multiple - remainder;
+}
 ```
 
-Unfortunately, this could also overflow:
+Unfortunately, even after the fix, it still overflows.
 
 Consider `roundUp(-2147483648, 5)`.
-After `abs` it becomes, at least mathematically, `2147483648`, which overflows our poor 32-bit `int`.
+After `abs` it becomes, mathematically, `2147483648`, which overflows our poor 32-bit `int`.
 
-On my machine, this is "worse" than the first case:
+On my machine, this is even "worse" than the first case:
 
 ```sh
 roundUp(2147483644, 5) = 2147483645    # while UB, the answer seems "correct"?
@@ -121,12 +132,7 @@ int roundUp(int numToRound, int multiple)
 
 This is more concise and performant (`if` branches are eliminated; potentially branchless).
 
-However, it also overflows in the `roundUp(2147483644, 5)` case, as the expression reduces to:
-
-```cpp
-return (2147483644 + 1 * (5 - 1)) / 5 * 5;
-    //  ^^^^^^^^^^^^^^^^^^^^^^^^ becomes 2147483648
-```
+However, it also overflows in the `roundUp(2147483644, 5)` case.
 
 On the other hand, this solution handle all negative `numToRound` cases correctly.
 
@@ -136,7 +142,7 @@ On the other hand, this solution handle all negative `numToRound` cases correctl
 There are many solutions of the form:
 
 ```cpp
-(numToRound + multiple - 1) / multiple * multiple;
+(numToRound + multiple - 1) / multiple * multiple
 ```
 
 Unlike the first solution, you can't fix it by simply subtracting 1 first.
@@ -146,7 +152,7 @@ Unfortunately, I've seen solutions like this in production.
 
 ### Alternative Approaches
 
-Let's consider "reductionism" - the art of reduce an unsolved problem to a solved problem:
+Let's try "reductionism" - the art of reducing an unsolved problem to a solved problem:
 
 ```cpp
 int round_up(int n, int m) {
@@ -154,24 +160,26 @@ int round_up(int n, int m) {
 }
 ```
 
-I've seen this form in production as well.
+I've seen solutions like this in production as well.
 
 Set aside for efficiency considerations (floating conversion and floating math),
-this solution will run into the same overflow issues when we try to generalize it:
+this solution will run into different issues when we try to generalize it:
 
 ```cpp
 int64_t round_up(int64_t n, int64_t m) {
     return std::ceil(double(n), double(m)) * m;
 }
-// double cannot represent all int64_t accurately
 ```
+
+Since `double` cannot represent all `int64_t` accurately,
+when you feed it a sufficiently large `n`, the result will be wrong.
 
 
 ### Can We Do Better?
 
 A quick revision of integer division in C++ (and C):
 
-> signed integer division truncates towards zero
+> Signed integer division truncates towards zero
 
 Example:
 - `7 / 3 -> 2`
@@ -216,7 +224,7 @@ int round_up(int n, int m) {
 
 ### Rounding Down
 
-Rounding down is largely symmetrical to rounding up:
+Rounding down is symmetrical to rounding up:
 - If `n > 0`, divide-then-multiply gives us what we want
 - If `n < 0`, we subtract 1 from the quotient if `n` is not a multiple of `m`
 
@@ -240,7 +248,7 @@ The answer in [this StackOverflow Question](https://stackoverflow.com/questions/
 shares similar overflowing issues, and the author pointed it out.
 
 Let's try reductionism again.
-We know that the result is one of the results from `round_up` and `round_dn`, whichever is closer to `n`.
+We know that the result is one of `round_up` and `round_dn`, whichever is closer to `n`.
 
 So, we can do it this way:
 
