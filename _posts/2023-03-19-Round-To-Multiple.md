@@ -156,7 +156,7 @@ Let's try "reductionism" - the art of reducing an unsolved problem to a solved p
 
 ```cpp
 int round_up(int n, int m) {
-    return std::ceil(double(n), double(m)) * m;
+    return std::ceil(double(n) / double(m)) * m;
 }
 ```
 
@@ -167,7 +167,7 @@ this solution will run into different issues when we try to generalize it:
 
 ```cpp
 int64_t round_up(int64_t n, int64_t m) {
-    return std::ceil(double(n), double(m)) * m;
+    return std::ceil(double(n) / double(m)) * m;
 }
 ```
 
