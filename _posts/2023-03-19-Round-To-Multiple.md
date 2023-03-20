@@ -217,7 +217,7 @@ The above can be simplified into:
 
 ```cpp
 int round_up(int n, int m) {
-    return (n / m + (n > 0) & (n % m)) * m;
+    return (n / m + (n > 0) & bool(n % m)) * m;
 }
 ```
 
@@ -230,7 +230,7 @@ Rounding down is symmetrical to rounding up:
 
 ```cpp
 int round_dn(int n, int m) {
-    return (n / m - (n < 0) & (n % m)) * m;
+    return (n / m - (n < 0) & bool(n % m)) * m;
 }
 ```
 
@@ -274,13 +274,13 @@ Putting everything together:
 template<class T>
 T round_up(T n, T m) {
     assert(m > T{0});
-    return (n / m + (n > T{0}) & (n % m)) * m;
+    return (n / m + (n > T{0}) & bool(n % m)) * m;
 }
 
 template<class T>
 T round_dn(T n, T m) {
     assert(m > T{0});
-    return (n / m - (n < T{0}) & (n % m)) * m;
+    return (n / m - (n < T{0}) & bool(n % m)) * m;
 }
 
 template<class T>
