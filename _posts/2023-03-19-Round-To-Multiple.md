@@ -117,7 +117,7 @@ roundUp(-2147483648, 5) = 2147483645   # UB and wrong answer!
 ```
 
 
-### The StackOverflow Solution 2
+### The StackOverflow Solution 2+
 
 Next, let's took at the second most up-voted answer:
 
@@ -136,18 +136,13 @@ However, it also overflows in the `roundUp(2147483644, 5)` case.
 
 On the other hand, this solution handle all negative `numToRound` cases correctly.
 
-
-### The StackOverflow Solutions 3+
-
 There are many solutions of the form:
 
 ```cpp
 (numToRound + multiple - 1) / multiple * multiple
 ```
 
-Unlike the first solution, you can't fix it by simply subtracting 1 first.
-
-Unfortunately, I've seen solutions like this in production.
+Unlike the first solution, you can't fix it by simply subtracting 1 first. Sufficiently large `multiple` will overflow. And I've seen solutions like this in production.
 
 
 ### Alternative Approaches
@@ -217,7 +212,7 @@ The above can be simplified into:
 
 ```cpp
 int round_up(int n, int m) {
-    return (n / m + (n > 0) & bool(n % m)) * m;
+    return (n / m + ((n > 0) & bool(n % m))) * m;
 }
 ```
 
@@ -230,7 +225,7 @@ Rounding down is symmetrical to rounding up:
 
 ```cpp
 int round_dn(int n, int m) {
-    return (n / m - (n < 0) & bool(n % m)) * m;
+    return (n / m - ((n < 0) & bool(n % m))) * m;
 }
 ```
 
@@ -248,8 +243,8 @@ The answer in [this StackOverflow Question](https://stackoverflow.com/questions/
 shares similar overflowing issues, and the author pointed it out.
 
 Let's try reductionism again.
-We know that the result is one of `round_up` and `round_dn`, whichever is closer to `n`.
 
+We know that the result is one of `round_up` and `round_dn`, whichever is closer to `n`.
 So, we can do it this way:
 
 ```cpp
@@ -262,11 +257,10 @@ int round_closest(int n, int m) {
 ```
 
 This works, with the added benefits that we can control precisely the behavior half-way cases.
-The above code rounds the halfway cases up.
-We can easily tweak it to achieve "round down", "towards zero", or "away from zero".
+The above code rounds the halfway cases up. We can easily tweak it to "round down", "towards zero", or "away from zero".
 
 
-## Afterwords
+## Summary
 
 Putting everything together:
 
@@ -274,13 +268,13 @@ Putting everything together:
 template<class T>
 T round_up(T n, T m) {
     assert(m > T{0});
-    return (n / m + (n > T{0}) & bool(n % m)) * m;
+    return (n / m + ((n > T{0}) & bool(n % m))) * m;
 }
 
 template<class T>
 T round_dn(T n, T m) {
     assert(m > T{0});
-    return (n / m - (n < T{0}) & bool(n % m)) * m;
+    return (n / m - ((n < T{0}) & bool(n % m))) * m;
 }
 
 template<class T>
@@ -290,6 +284,9 @@ T round_closest(T n, T m) {
     return (n - lo < hi - n) ? lo : hi;
 }
 ```
+
+
+## Afterwords
 
 Perhaps we should consider standardizing these functions?
 The seemingly-trivial [midpoint](https://en.cppreference.com/w/cpp/numeric/midpoint) is standardized.
