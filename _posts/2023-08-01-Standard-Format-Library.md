@@ -185,4 +185,7 @@ If any of the following is required:
 - C++ 17 or before
 - Dynamic format string
 - `print`
-then only **fmtlib** can fufill the requirements. For this reason, I expect **fmtlib** to continue to be widely used in the near future.
+
+Then only **fmtlib** can fufill the requirements.
+
+For reasons above, I expect **fmtlib** to continue to be widely used in the near future.
