@@ -1,5 +1,5 @@
 ---
-title: "Implement K-way Merge on top of std::ranges"
+title: "Implement K-Way Merge with std::ranges"
 date: 2023-09-27
 ---
 
@@ -18,7 +18,7 @@ constexpr /* ... */ merge( R1&& r1, R2&& r2, O result /*, ... */ );
 But it's for merging exactly 2 ranges.
 The general form of the problem is: given *k* sorted ranges, merge them into one sorted range.
 
-This is known as k-way merge. Efficient algorithms (when k is not small) can be found in [this Wikipedia Page](). Let's implement it in C++ 20.
+This is known as **k-way merge**. Efficient algorithms (when k is not small) can be found in [this Wikipedia Page](). Let's implement it.
 
 
 ## API Design
@@ -43,7 +43,7 @@ constexpr /* ... */ k_merge( Rs&& rs, O result);
 
 It turns out they are 2 very different problems. Today we'll only talk about the runtime case as it is more general and easier to deal with - all input ranges are of the same type.
 
-To keep it simple, we'll simply return `result` (like `std::ranges`), and leaving custom comparison function out for now (it can be easily added later).
+To keep it simple, we'll simply return `result` (like `std::ranges`), and leaving the custom comparison function out for now (it can be easily added later).
 
 ```cpp
 template< ranges::input_range Rs,

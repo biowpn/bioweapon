@@ -1,5 +1,5 @@
 ---
-title: "Experience with the Standard Library <format>"
+title: "Experience with std::format"
 date: 2023-08-01
 ---
 
