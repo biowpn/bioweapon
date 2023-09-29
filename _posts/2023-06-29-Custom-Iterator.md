@@ -1,5 +1,5 @@
 ---
-title: "Custom Iterator Example"
+title: "Custom Iterator"
 date: 2023-06-29
 ---
 
@@ -24,15 +24,14 @@ for line in open("hello.txt"):
 
 We can achieve the same thing in C++ with custom iterators.
 
-Writing conforming iterators, unfortunately, involves some boilerplate code. This post provides templates so you can focus on writing the actual logic.
-
-The following code templates assume C++ 20.
+Writing conforming iterators, unfortunately, involves some boilerplate code.
+This post provides some templates to help us with that (assuming C++ 20).
 
 
 
 ## Input Iterator
 
-Reusing our intro example:
+Reusing our intro example, a line-iterator:
 
 ```cpp
 // Iterate lines through a std::istream by std::getline.
@@ -168,67 +167,59 @@ std::ranges::copy(iter_line(ifs), ostream_iterator_2(std::cout, filename + std::
 
 
 
-## Forward Iterator
+## Output Iterator using `std::back_insert_iterator`
 
-While input iterators are single-pass, forward iterators are multi-pass.
-
-Here's an example of an iterator generating [collatz sequence](https://en.wikipedia.org/wiki/Collatz_conjecture):
+An alternative to writing ad-hoc output iterators is to reuse `std::back_insert_iterator`.
+Simply add the following to your class that will accept the output value:
 
 ```cpp
-class collatz_iterator {
-public:
-    using difference_type = int;
-    using value_type = std::size_t;
-    using iterator_category = std::forward_iterator_tag;
+class my_application {
+  public:
+    // our payload
+    using value_type = std::string;
+    
+    // called to supply a new value
+    void push_back(const value_type&);
+};
+```
 
+The above example can be rewritten as:
+
+```cpp
+// Prefix and postfix value output to std::ostream using operator<<.
+class printer {
 private:
-    value_type v_;
+    std::ostream* os_;
+    std::string prefix_;
+    std::string postfix_;
 
-    // business logic for getting the next value
-    void next() {
-        if (v_ == 1) {
-            v_ = 0; // marking end of sequence
-        } else {
-            v_ = v_ % 2 ? (3 * v_ + 1) : (v_ / 2);
-        }
+    // business logic for outputting a value
+    template <class T>
+    void output(const T& x) {
+        (*os_) << prefix_ << x << postfix_;
     }
 
 public:
-    collatz_iterator() : v_(0) {}
-    collatz_iterator(value_type v) : v_(v) {}
+    printer(std::ostream& os, std::string prefix, std::string postfix)
+        : os_(&os), prefix_(std::move(prefix)), postfix_(std::move(postfix)) {}
 
-    value_type operator*() const { return v_; }
+    using value_type = std::string;
 
-    collatz_iterator& operator++() {
-        this->next();
+    void push_back(const value_type& x) {
+        output(x);
         return *this;
     }
-    collatz_iterator operator++(int) {
-        auto old = *this;
-        ++(*this);
-        return old;
-    }
-
-    bool operator==(const collatz_iterator &other) const {
-        return v_ == other.v_;
-    }
 };
+
+
+// prepend filename to each line of the input file, and print to stdout
+const char* filename = "input_file.txt";
+std::ifstream ifs(filename);
+std::ranges::copy(iter_line(ifs), std::back_inserter(printer(std::cout, filename + std::string(": "), "\n")));
 ```
 
-The accompanying range:
 
-```cpp
-// collatz_sequence(3) -> [3, 10, 5, 16, 8, 4, 2, 1]
-class collatz_sequence {
-    using collatz_iterator::value_type;
-private:
-    value_type init_;
 
-public:
-    collatz_sequence(value_type init) : init_(init) {}
+## Afterword
 
-    auto begin() { return collatz_iterator(init_); }
-
-    auto end() { return collatz_iterator(0); }
-};
-```
+Using custom iterators can help improve our code quality; getting data is now separated from processing data (algorithms) and can be tested separately.
