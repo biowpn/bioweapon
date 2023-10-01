@@ -18,12 +18,12 @@ constexpr /* ... */ merge( R1&& r1, R2&& r2, O result /*, ... */ );
 But it's for merging exactly 2 ranges.
 The general form of the problem is: given *k* sorted ranges, merge them into one sorted range.
 
-This is known as **k-way merge**. Efficient algorithms (when k is not small) can be found in [this Wikipedia Page](). Let's implement it.
+This is known as [k-way merge](https://en.wikipedia.org/wiki/K-way_merge_algorithm). Let's implement it.
 
 
 ## API Design
 
-First of all, what should our API look like? There isn't a precedence in standard `<algorithm>` library thats multiple ranges as input. They take at most two (and usually one) ranges.
+First of all, what should our API look like? There isn't a precedent function in the standard `<algorithm>` library that takes multiple ranges as input. They take at most two (and usually one) ranges.
 
 But even before that, we need to ask: do we know `k` at compile time? If so, the API can look like:
 
@@ -31,6 +31,10 @@ But even before that, we need to ask: do we know `k` at compile time? If so, the
 template< ranges::input_range ... Rs,
           class O>
 constexpr /* ... */ k_merge( Rs&& ... rs, O result);
+
+// usage:
+// k_merge(r1, r2, out);
+// k_merge(r1, r2, r3, out);
 ```
 
 Otherwise (`k` only known at runtime), we have to introduce "range of ranges":
@@ -39,11 +43,16 @@ Otherwise (`k` only known at runtime), we have to introduce "range of ranges":
 template< ranges::input_range Rs,
           class O>
 constexpr /* ... */ k_merge( Rs&& rs, O result);
+
+// usage:
+// k_merge({r1, r2}, out);
+// k_merge({r1, r2, r3}, out);
 ```
 
-It turns out they are 2 very different problems. Today we'll only talk about the runtime case as it is more general and easier to deal with - all input ranges are of the same type.
+It turns out they are two very different problems.
+Today we'll only talk about the runtime case as it is more general and easier to deal with - all input ranges are of the same type.
 
-To keep it simple, we'll simply return `result` (like `std::ranges`), and leaving the custom comparison function out for now (it can be easily added later).
+To keep it simple, we'll simply return `result` (like `std::ranges`), and leaving the custom comparison function out:
 
 ```cpp
 template< ranges::input_range Rs,
@@ -90,7 +99,7 @@ Here we only keep the non-empty ranges. We'll see why.
 
 ## Linear Scan
 
-Let's implement the straightforward approach - scan the minimum of `k` ranges each iterator, and output that.
+Let's implement the straightforward approach - scan the minimum of `k` ranges each iteration.
 
 We first need a comparison function to compare two input ranges.
 
@@ -190,7 +199,7 @@ auto cmp_rg = [](const index_subrange_t& lhs, const index_subrange_t& rhs) {
 While heap-based algorithms give the best time complexity, they aren't necessarily the fastest when `k` isn't big.
 This is because moving items around the heap, while cheap, isn't free.
 
-What we can do it to choose the algorithm based on `k`: only employ the heap algorithm when `k` reaches some predefined threshold value.
+What we can do it to choose the algorithm based on `k`: only employ the heap algorithm when `k` reaches some predefined threshold.
 
 In fact, while we are at it:
 - If `k == 0`, call it a day!
@@ -201,4 +210,4 @@ In fact, while we are at it:
 
 In addition, we won't just select algorithm one-off at the start; we keep re-evaluating whether we should switch algo each time `k` changes - decreases by 1 when an input range becomes empty and is removed from `sub_rs`.
 
-In fact, in you check the actual implementations ([libstdc++](https://github.com/gcc-mirror/gcc/blob/d9375e490072d1aae73a93949aa158fcd2a27018/libstdc%2B%2B-v3/include/bits/stl_algo.h#L4856), [libc++](https://github.com/llvm-mirror/libcxx/blob/a12cb9d211019d99b5875b6d8034617cbc24c2cc/include/algorithm#L4348)) of `std::merge`, you'll see that they fallback to `std::copy` whenever an input range becomes empty. Essentially the same idea.
+In fact, if you check the actual implementations ([libstdc++](https://github.com/gcc-mirror/gcc/blob/d9375e490072d1aae73a93949aa158fcd2a27018/libstdc%2B%2B-v3/include/bits/stl_algo.h#L4856), [libc++](https://github.com/llvm-mirror/libcxx/blob/a12cb9d211019d99b5875b6d8034617cbc24c2cc/include/algorithm#L4348)) of `std::merge`, you'll see that they fallback to `std::copy` whenever an input range becomes empty. Essentially the same idea.
