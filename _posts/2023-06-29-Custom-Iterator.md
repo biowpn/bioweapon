@@ -207,7 +207,6 @@ public:
 
     void push_back(const value_type& x) {
         output(x);
-        return *this;
     }
 };
 
@@ -215,7 +214,8 @@ public:
 // prepend filename to each line of the input file, and print to stdout
 const char* filename = "input_file.txt";
 std::ifstream ifs(filename);
-std::ranges::copy(iter_line(ifs), std::back_inserter(printer(std::cout, filename + std::string(": "), "\n")));
+printer p(std::cout, filename + std::string(": "), "\n");
+std::ranges::copy(iter_line(ifs), std::back_inserter(p));
 ```
 
 
