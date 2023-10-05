@@ -57,21 +57,19 @@ std::unique_ptr<Dinosaur> make_dinosaur(std::string_view name) {
 It's all good, and I doubt it'll take 5 minutes.
 
 But, suddenly it starts to rain heavily and the elevator breaks. You have to unfortunately stay in the office for a bit longer.
-You need to skill some time anyway, so you stare at the code, and start thinking:
+You need to kill some time anyway, so you stare at the code, and start thinking:
 
 **What can be done to improve the code?** What can you do now to make life easier for the future you?
 
 
 ## Analysis of the Solution
 
-As we can see, there is high proportion of of boilerplate.
-The only new information of each block of code is the dinosaur name. Everything else just repeats themselves:
-- The variable `name`
+As we can see, there is high proportion of boilerplate.
+The only new information of each code block is the dinosaur name. Everything else just repeats themselves:
 - String comparison `==`
 - `std::make_unique`
 
-Any of the above can change as the requirements change in the future:
-- The variable `name` is renamed
+Any of the above are subject to change in business requirements:
 - Case-insensitive string comparison
 - Returning `shared_ptr` instead
 - Additional arguments to constructor
