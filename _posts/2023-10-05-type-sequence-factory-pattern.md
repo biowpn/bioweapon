@@ -1,6 +1,6 @@
 ---
-title: "type_sequence and Factory Method"
-date: 2023-10-06
+title: "Type Sequence and Factory Method"
+date: 2023-10-05
 ---
 
 ## Intro
