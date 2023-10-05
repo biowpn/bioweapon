@@ -136,7 +136,7 @@ Bottom line is, `get_typename<T>` is a (mostly) solved problem.
 
 ## A notion of list of types
 
-Now that we have our templated `make_dinosaur_impl`, we want to apply it to all the dinosaur types. It's a `for_each`, but on types instead of on values!
+Now that we have our templated `make_dino_impl`, we want to apply it to all the dinosaurs. It's a `for_each`, but on types instead of on values!
 
 And finally, I'm ready to introduce the star of the day: `type_sequence`.
 
