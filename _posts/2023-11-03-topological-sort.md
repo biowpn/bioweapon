@@ -5,8 +5,7 @@ date: 2023-11-03
 
 ## Intro
 
-[Topological sorting](https://en.wikipedia.org/wiki/Topological_sorting) comes up often in graph-based applications.
-For example, task schedulers, dependency resolvers, and node-based computation engines. Let's try to design and implement generic topological sorting in C++.
+[Topological sorting](https://en.wikipedia.org/wiki/Topological_sorting) comes up often applications such as task schedulers, dependency resolvers, and node-based computation engines. Let's try to design and implement generic topological sorting in C++.
 
 
 ## Can we reuse `std::sort`?
@@ -17,11 +16,11 @@ we should preferably use them.
 We have a candidate: `std::sort` (and `std::ranges::sort`). Its API looks like:
 
 ```cpp
-template< ranges::random_access_range R, class Comp = ranges::less, /* ... */ >
-/* ... */ sort( R&& r, Comp comp = {}, /* ... */ );
+template< class RandomIt, class Compare >
+void sort( RandomIt first, RandomIt last, Compare comp );
 ```
 
-From the looks of it, we can supply our list of vertices as `r`, and hack around `comp` so that it provides information on the edges of the graph. In fact, intuitively, we can define it as:
+From the looks of it, we can supply our vertices as `[first, last)`, and hack around `comp` so that it provides information on the edges. In fact, intuitively, we can define `comp` as:
 
 - `comp(a, b)` returns true iff there is an edge from `a` to `b`
 
@@ -43,9 +42,9 @@ So, can we simply
 
 ```cpp
 /// `edge(u, v)` is true if there is an edge from `u` to `v`
-template< ranges::random_access_range R, class F >
-void topological_sort( R&& vertices, F edge ) {
-    std::ranges::sort(vertices, edge);
+template< class RandomIt, class Compare >
+void topological_sort( RandomIt first, RandomIt last, F edge ) {
+    std::sort(first, last, edge);
 }
 ```
 
@@ -92,7 +91,7 @@ int main() {
 }
 ```
 
-Compiled using GCC 13.1.0 and executed, the above program prints:
+Compiled using GCC 13.1.0, the above program prints:
 
 ```
 ABCD --> ABCD
@@ -178,7 +177,7 @@ In general, any algorithm that requires *Compare* (read: *strict weak ordering*)
 
 ## What do we do instead?
 
-We can stick to `std::sort`-like API:
+Let's implement topological sort from scratch, with `std::sort`-like API:
 
 ```cpp
 /// `edge(u, v)` is true if and only if there is an edge from `u` to `v`
@@ -198,7 +197,7 @@ void topological_sort_v1(I first, S last, F edge) {
             if (edge(*other, *first)) {
                 // *first is not a source; *other may be
                 std::swap(*other, *first);
-                // have to do the full search again for the new *first
+                // IMPORTANT! have to do the full search again for the new *first
                 other = first;
             }
         }
@@ -208,7 +207,7 @@ void topological_sort_v1(I first, S last, F edge) {
 
 This is simple, requires constant extra memory, but what about the time complexity?
 
-Note that due to the reset `other = first` inside the nested loop,
+Note that due to the important `other = first` inside the nested loop,
 this brute force solution could be `O(|V|^3)`, where `|V|` is the number of vertices.
 
 Alternatively, we could implement Kahn's algorithm. The rough idea is:
