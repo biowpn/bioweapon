@@ -5,7 +5,7 @@ date: 2023-11-03
 
 ## Intro
 
-[Topological sorting](https://en.wikipedia.org/wiki/Topological_sorting) comes up often applications such as task schedulers, dependency resolvers, and node-based computation engines. Let's try to design and implement generic topological sorting in C++.
+[Topological sorting](https://en.wikipedia.org/wiki/Topological_sorting) comes up often in applications such as task schedulers, dependency resolvers, and node-based computation engines. Let's try to design and implement generic topological sorting in C++.
 
 
 ## Can we reuse `std::sort`?
@@ -16,17 +16,17 @@ we should preferably use them.
 We have a candidate: `std::sort` (and `std::ranges::sort`). Its API looks like:
 
 ```cpp
+/// Sorts the elements in the range [`first`, `last`) in non-descending order,
+/// with respect to a comparator `comp`.
 template< class RandomIt, class Compare >
 void sort( RandomIt first, RandomIt last, Compare comp );
 ```
 
 From the looks of it, we can supply our vertices as `[first, last)`, and hack around `comp` so that it provides information on the edges. In fact, intuitively, we can define `comp` as:
 
-- `comp(a, b)` returns true iff there is an edge from `a` to `b`
+- `comp(i, j)` returns true if and only if there is an edge from `i` to `j`
 
-This naturally models the "`a` comes before `b`" relationship as "`a` compares less-than `b`".
-
-Better yet, paraphrasing [the sort documentation](https://en.cppreference.com/w/cpp/algorithm/sort), the postcondition of `std::sort` is:
+Better yet, the postcondition of `std::sort` is (paraphrasing [the sort documentation](https://en.cppreference.com/w/cpp/algorithm/sort)):
 
 > `comp(j, i) == false` for **every** pair of element `i` and `j` where `i` is before `j` in the sequence.
 
@@ -41,7 +41,7 @@ It's a perfect match!
 So, can we simply
 
 ```cpp
-/// `edge(u, v)` is true if there is an edge from `u` to `v`
+/// `edge(u, v)` returns true if and only if there is an edge from `u` to `v`
 template< class RandomIt, class Compare >
 void topological_sort( RandomIt first, RandomIt last, F edge ) {
     std::sort(first, last, edge);
@@ -62,21 +62,15 @@ There are exactly 3 topological orderings of the graph:
 - `ACBD`
 - `ACDB`
 
-The following program generates all permutations of the vertices, supplies them to `std::ranges::sort`, and shows the output:
+The following program generates all permutations of the vertices, supplies them to `std::sort`, and shows the output:
 
 ```cpp
-
 #include <algorithm>
 #include <iostream>
-#include <string_view>
-#include <vector>
-
-auto& operator<<(std::ostream& os, const std::vector<char>& x) {
-    return os << std::string_view(x.data(), x.size());
-}
+#include <string>
 
 int main() {
-    std::vector<char> vertices{'A', 'B', 'C', 'D'};
+    std::string vertices{'A', 'B', 'C', 'D'};
     auto edge = [](char u, char v) {
         return (u == 'A' && v == 'B')
             || (u == 'A' && v == 'C')
@@ -84,10 +78,10 @@ int main() {
     };
 
     do {
-        auto cur = vertices;
-        std::ranges::sort(cur, edge);
-        std::cout << vertices << " --> " << cur << '\n';
-    } while (std::ranges::next_permutation(vertices).found);
+        auto sorted = vertices;
+        std::sort(sorted.begin(), sorted.end(), edge);
+        std::cout << vertices << " --> " << sorted << '\n';
+    } while (std::next_permutation(vertices.begin(), vertices.end()));
 }
 ```
 
@@ -143,9 +137,9 @@ And in fact, in any of the above fails to hold, we would get a hard compile erro
 
 Reading again the [the sort documentation](https://en.cppreference.com/w/cpp/algorithm/sort), more carefully this time:
 
-> **comp** - comparison function object (i.e. an object that satisfies the requirements of *Compare*) which returns `​true` if the first argument is less than (i.e. is ordered *before*) the second.
+> **comp** - comparison function object (i.e. an object that satisfies the requirements of ***Compare***) which returns `​true` if the first argument is less than (i.e. is ordered *before*) the second.
 
-In the [documentation of Compare](https://en.cppreference.com/w/cpp/named_req/Compare), we have this section:
+What are the requirements of *Compare*? In the [documentation of Compare](https://en.cppreference.com/w/cpp/named_req/Compare), we have this section:
 
 > Establishes *strict weak ordering* relation with the following properties:
 1. For all `a`, `comp(a, a) == false`.
@@ -154,7 +148,7 @@ In the [documentation of Compare](https://en.cppreference.com/w/cpp/named_req/Co
 
 `edge` satisfies 1 and 2, but not 3: `edge(A, C) == true` and `edge(C, D) == true`, but `edge(A, D) == false`.
 
-So that must be it, right? We just need to change `edge` to `is_path` and it'll work?
+So that must be it, right? We just need to change `edge` to `path` and it'll work?
 
 Hold on a second. There's another section on `equiv(a, b)`, which is defined as `!comp(a, b) && !comp(b, a)` (`a` and `b` are considered *equal* if neither precedes the other), as follows:
 
@@ -164,15 +158,15 @@ Hold on a second. There's another section on `equiv(a, b)`, which is defined as 
 
 4 is where the real trouble is.
 
-In our example, `equiv(B, C) == true` and `equiv(B, D) == true`, therefore `std::sort` goes ahead and assumes `equiv(C, D) == true`, which is incorrect. Even if we replace `edge` with `is_path`, 4 is still violated.
+In our example, `equiv(B, C) == true` and `equiv(B, D) == true`, therefore `std::sort` goes ahead and assumes `equiv(C, D) == true`, which is incorrect. Therefore, even if we replace `edge` with `path`, 4 is still violated.
 
-But why is this such a big deal?
+But why is this such a big deal? Why can't it "just work"?
 
-Let's forget `std::sort` for now and take a look at the simpler `std::is_sorted`. Recall the definition of "sorted sequence" states that *every* pair satisfies some condition, so there should be `O(N^2)` checks to be thorough, but `std::is_sorted` runs in `O(N)` time. How is that possible?
+Let's forget `std::sort` for a moment and look at the simpler `std::is_sorted`. Recall the definition of "sorted sequence" states that *every* pair satisfies some condition, so there should be `O(N^2)` checks to be thorough, but `std::is_sorted` runs in `O(N)` time. How is that possible?
 
-As you may already know it, `std::is_sorted` only checks the adjacent pairs. All the rest are inferred, and it is allowed to do so because of the properties of *Compare*! As an example, `std::is_sorted` will happily consider `DABC` "sorted", while in fact it is not.
+As you may already know it, `std::is_sorted` only checks the adjacent pairs. All the rest are *inferred*, and it is allowed to do so because of the properties of *Compare*! As an example, `std::is_sorted` will happily consider `DABC` "sorted", while in fact it is not.
 
-In general, any algorithm that requires *Compare* (read: *strict weak ordering*), including `std::sort`, cannot be used to implement topological sorting because the vertices of a directed acyclic graph (DAG) do not form a strict weak ordering.
+In general, any algorithm that requires *Compare* (read: *strict weak ordering*), including `std::sort`, cannot be used to implement topological sorting because the vertices of a directed acyclic graph do not form a strict weak ordering.
 
 
 ## What do we do instead?
@@ -180,17 +174,16 @@ In general, any algorithm that requires *Compare* (read: *strict weak ordering*)
 Let's implement topological sort from scratch, with `std::sort`-like API:
 
 ```cpp
-/// `edge(u, v)` is true if and only if there is an edge from `u` to `v`
 template <std::random_access_iterator I, class S, class F>
 void topological_sort(I first, S last, F edge);
 ```
 
-The naive way is to do a modified insert sort:
+The naive way is to do a modified insertion sort:
 
 ```cpp
 /// topological sort, the brute force
 template <std::random_access_iterator I, class S, class F>
-void topological_sort_v1(I first, S last, F edge) {
+void topological_sort(I first, S last, F edge) {
     for (; first != last; ++first) {
         // check if *first is a source.
         for (auto other = std::next(first); other != last; ++other) {
@@ -221,7 +214,7 @@ Alternatively, we could implement Kahn's algorithm. The rough idea is:
 ```cpp
 /// topological sort, Kahn's algorithm
 template <std::random_access_iterator I, class S, class F>
-void topological_sort_v2(I first, S last, F edge) {
+void topological_sort(I first, S last, F edge) {
     using bit_vector = std::vector<bool>;
 
     std::size_t n = std::ranges::distance(first, last);
@@ -271,10 +264,8 @@ where `reorder` reorders a range based on another range of indices:
 ```cpp
 /// Reorder [first, last) based on indices from [order, order + (last - first))
 /// Based on https://stackoverflow.com/a/22183350
-/// Linear time.
 template <std::random_access_iterator I, class S, std::random_access_iterator O>
-void reorder(I first, S last, O order)
-{
+void reorder(I first, S last, O order) {
     auto n = static_cast<std::size_t>(std::ranges::distance(first, last));
     for (std::size_t i = 0; i < n; ++i) {
         if (i != order[i]) {
@@ -294,7 +285,8 @@ void reorder(I first, S last, O order)
 Kahn's algorithm runs in `O(|V| + |E|)`, `|E|` is the number of edges.
 For a dense graph, `|E| ~ |V|^2`, therefore our algorithm runs in `O(|V|^2)`.
 
-Instead of using `reorder` to sort the input range in-place,
+To simplify the outputing part,
+instead of using `reorder` to sort the input range in-place,
 we can take an output iterator to collect the sorted sequence:
 
 ```cpp
@@ -308,12 +300,17 @@ void topological_sort_copy(I first, S last, F edge, O result);
 We showed that why `std::[ranges::]sort` cannot be used for topological sorting,
 and then implemented topological sorting under a similar API.
 
-Perhaps, a few more finite graph algorithms can be implemented based on the API:
+Perhaps, a few more finite graph algorithms can be implemented in this flavor:
 
 ```cpp
 template <std::random_access_iterator I, class S, class F>
-/* ... */ f(I first, S last, F edge);
+I find_cycle(I first, S last, F edge);
+
+template <std::random_access_iterator I, class S, class F, class V>
+void depth_first_search(I first, S last, F edge, V visitor);
+
+...
 ```
 
-Am I smelling `std::graphs::sort`? Maybe one day. Maybe.
+Am I smelling `std::graphs`? Maybe one day. Maybe.
 
