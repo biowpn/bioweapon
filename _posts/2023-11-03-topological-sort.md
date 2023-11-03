@@ -55,7 +55,7 @@ and call it a day? Does it work?
 
 Let's try it with an example. The graph looks like this:
 
-![plot](../images/tp_sort_graph_1.png)
+![plot](https://github.com/biowpn/bioweapon/blob/main/images/tp_sort_graph_1.png)
 
 There are exactly 3 topological orderings of the graph:
 - `ABCD`
