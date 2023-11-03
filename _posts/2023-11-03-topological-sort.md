@@ -42,7 +42,7 @@ So, can we simply
 
 ```cpp
 /// `edge(u, v)` returns true if and only if there is an edge from `u` to `v`
-template< class RandomIt, class Compare >
+template< class RandomIt, class F >
 void topological_sort( RandomIt first, RandomIt last, F edge ) {
     std::sort(first, last, edge);
 }
@@ -215,23 +215,13 @@ Alternatively, we could implement Kahn's algorithm. The rough idea is:
 /// topological sort, Kahn's algorithm
 template <std::random_access_iterator I, class S, class F>
 void topological_sort(I first, S last, F edge) {
-    using bit_vector = std::vector<bool>;
-
     std::size_t n = std::ranges::distance(first, last);
-    bit_vector m(n * n); // adjacency matrix
     std::vector<std::size_t> in_degree(n);
     std::queue<std::size_t> sources;
 
     for (std::size_t i = 0; i < n; ++i) {
-        for (std::size_t j = i + 1; j < n; ++j) {
-            m[n * i + j] = edge(first[i], first[j]);
-            m[n * j + i] = !m[n * i + j] && edge(first[j], first[i]);
-        }
-    }
-
-    for (std::size_t i = 0; i < n; ++i) {
         for (std::size_t j = 0; j < n; ++j) {
-            in_degree[i] += bool(m[n * j + i]);
+            in_degree[i] += bool(edge(first[j], first[i]));
         }
         if (in_degree[i] == 0) {
             sources.push(i);
@@ -246,8 +236,7 @@ void topological_sort(I first, S last, F edge) {
         sources.pop();
         order.push_back(i);
         for (std::size_t j = 0; j < n; ++j) {
-            if (m[n * i + j]) {
-                m[n * i + j] = false;
+            if (edge(first[i], first[j])) {
                 if (--in_degree[j] == 0) {
                     sources.push(j);
                 }
