@@ -74,7 +74,8 @@ int main() {
     auto edge = [](char u, char v) {
         return (u == 'A' && v == 'B')
             || (u == 'A' && v == 'C')
-            || (u == 'C' && v == 'D');
+            || (u == 'C' && v == 'D')
+            ;
     };
 
     do {
@@ -162,9 +163,9 @@ In our example, `equiv(B, C) == true` and `equiv(B, D) == true`, therefore `std:
 
 But why is this such a big deal? Why can't it "just work"?
 
-Let's forget `std::sort` for a moment and look at the simpler `std::is_sorted`. Recall the definition of "sorted sequence" states that *every* pair satisfies some condition, so there should be `O(N^2)` checks to be thorough, but `std::is_sorted` runs in `O(N)` time. How is that possible?
+Let's forget `std::sort` for a moment and look at the simpler `std::is_sorted`. Recall the definition of "sorted sequence" states that *every* pair is ordered correctly, so there should be `O(N^2)` checks to be thorough, but `std::is_sorted` runs in `O(N)` time. How is that possible?
 
-As you may already know it, `std::is_sorted` only checks the adjacent pairs. All the rest are *inferred*, and it is allowed to do so because of the properties of *Compare*! As an example, `std::is_sorted` will happily consider `DABC` "sorted", while in fact it is not.
+As you may already know it, `std::is_sorted` only checks the adjacent pairs. All the rest are *inferred*, and it is allowed to do so because of the properties of *Compare*! In our example, `std::is_sorted` will happily consider `DABC` "sorted", while in fact it is not.
 
 In general, any algorithm that requires *Compare* (read: *strict weak ordering*), including `std::sort`, cannot be used to implement topological sorting because the vertices of a directed acyclic graph do not form a strict weak ordering.
 
@@ -179,6 +180,8 @@ void topological_sort(I first, S last, F edge);
 ```
 
 The naive way is to do a modified insertion sort:
+In each iteration, we find a source - vertice without any incoming edge,
+then we put it at the front.
 
 ```cpp
 /// topological sort, the brute force
@@ -198,12 +201,12 @@ void topological_sort(I first, S last, F edge) {
 }
 ```
 
-This is simple, requires constant extra memory, but what about the time complexity?
+This is short and concise, requires constant extra memory, but what about the time complexity?
 
 Note that due to the important `other = first` inside the nested loop,
 this brute force solution could be `O(|V|^3)`, where `|V|` is the number of vertices.
 
-Alternatively, we could implement Kahn's algorithm. The rough idea is:
+Alternatively, we could use Kahn's algorithm. The rough idea is:
 
 1. Put all the sources into a queue `S`
 2. Remove a source, `u`, from `S`, and output `u`
@@ -248,18 +251,8 @@ void topological_sort(I first, S last, F edge) {
 }
 ```
 
-
 Kahn's algorithm runs in `O(|V| + |E|)`, where `|E|` is the number of edges.
 For a dense graph, `|E| ~ |V|^2`, therefore our algorithm runs in `O(|V|^2)`.
-
-To simplify the outputing part,
-instead of using `reorder` to sort the input range in-place,
-we can take an output iterator to collect the sorted sequence:
-
-```cpp
-template <std::random_access_iterator I, class S, class F, class O>
-void topological_sort_copy(I first, S last, F edge, O result);
-```
 
 
 ## Afterword
@@ -279,5 +272,4 @@ void depth_first_search(I first, S last, F edge, V visitor);
 ...
 ```
 
-Am I smelling `std::graphs`? Maybe one day. Maybe.
-
+Am I dreaming `std::graphs`? Maybe one day. Maybe.
