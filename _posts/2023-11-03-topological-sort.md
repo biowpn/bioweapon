@@ -205,7 +205,7 @@ this brute force solution could be `O(|V|^3)`, where `|V|` is the number of vert
 
 Alternatively, we could implement Kahn's algorithm. The rough idea is:
 
-1. Put all the sources into a set `S`
+1. Put all the sources into a queue `S`
 2. Remove a source, `u`, from `S`, and output `u`
 3. Remove all outgoing edges of `u`
 4. Some (previous) direct successor of `u`, `v`, may become a source; if so, add `v` to `S`
@@ -217,61 +217,39 @@ template <std::random_access_iterator I, class S, class F>
 void topological_sort(I first, S last, F edge) {
     std::size_t n = std::ranges::distance(first, last);
     std::vector<std::size_t> in_degree(n);
-    std::queue<std::size_t> sources;
 
     for (std::size_t i = 0; i < n; ++i) {
         for (std::size_t j = 0; j < n; ++j) {
             in_degree[i] += bool(edge(first[j], first[i]));
         }
-        if (in_degree[i] == 0) {
-            sources.push(i);
-        }
     }
+    
+    // [s_first, s_last) is the queue that contain the sources of the sub-graph [s_last, last)
+    auto s_first = first;
+    auto s_last = s_first;
 
-    std::vector<std::size_t> order; // tp-sorted, as indices
-    order.reserve(n);
-
-    while (!sources.empty()) {
-        auto i = sources.front();
-        sources.pop();
-        order.push_back(i);
-        for (std::size_t j = 0; j < n; ++j) {
-            if (edge(first[i], first[j])) {
-                if (--in_degree[j] == 0) {
-                    sources.push(j);
-                }
-            }
-        }
-    }
-
-    reorder(first, last, order.begin());
-}
-```
-
-where `reorder` reorders a range based on another range of indices:
-
-```cpp
-/// Reorder [first, last) based on indices from [order, order + (last - first))
-/// Based on https://stackoverflow.com/a/22183350
-template <std::random_access_iterator I, class S, std::random_access_iterator O>
-void reorder(I first, S last, O order) {
-    auto n = static_cast<std::size_t>(std::ranges::distance(first, last));
     for (std::size_t i = 0; i < n; ++i) {
-        if (i != order[i]) {
-            auto temp = std::move(first[i]);
-            std::size_t j = i;
-            for (std::size_t k = order[j]; k != i; j = k, k = order[j]) {
-                first[j] = std::move(first[k]);
-                order[j] = j;
+        if (in_degree[i] == 0) {
+            std::swap(first[i], *s_last);
+            std::swap(in_degree[i], in_degree[s_last - first]);
+            ++s_last;
+        }
+    }
+
+    for (; s_first != s_last; ++s_first) {
+        for (auto t_it = s_last; t_it != last; ++t_it) {
+            if (edge(*s_first, *t_it) && --in_degree[t_it - first] == 0) {
+                std::swap(*t_it, *s_last);
+                std::swap(in_degree[t_it - first], in_degree[s_last - first]);
+                ++s_last;
             }
-            first[j] = std::move(temp);
-            order[j] = j;
         }
     }
 }
 ```
 
-Kahn's algorithm runs in `O(|V| + |E|)`, `|E|` is the number of edges.
+
+Kahn's algorithm runs in `O(|V| + |E|)`, where `|E|` is the number of edges.
 For a dense graph, `|E| ~ |V|^2`, therefore our algorithm runs in `O(|V|^2)`.
 
 To simplify the outputing part,
