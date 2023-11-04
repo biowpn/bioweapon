@@ -227,7 +227,7 @@ void topological_sort(I first, S last, F edge) {
         }
     }
     
-    // [s_first, s_last) is the queue that contain the sources of the sub-graph [s_last, last)
+    // [s_first, s_last) are the sources of the sub-graph [s_first, last)
     auto s_first = first;
     auto s_last = s_first;
 
