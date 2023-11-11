@@ -6,11 +6,11 @@ date: 2023-03-19
 
 ## Intro
 
-Rounding is one of the recurring challenges in software engineering.
-While there are standard solutions (`std::round` and friends) to "rounding floating-point to whole number" problem,
-there is an entirely different class of rounding problems in the wild:
+Rounding is one of the recurring tasks.
+While there are standard solutions (`std::round` and friends) to "rounding floating-point to whole number",
+there is a more general class of rounding problems:
 
-**Round N to multiple of M.**
+**Round integer N to multiple of integer M.**
 
 For example, given `N = 17` and `M = 10`:
 
@@ -19,7 +19,7 @@ For example, given `N = 17` and `M = 10`:
 - Rounding to closest: `20`
 
 These "round-to-multiple" problems arise in many fields.
-For example, finance: the price of a security must be multiple of "tick size" (imposed by the exchange).
+For example, finance: the price of a security must be multiple of "tick size".
 
 
 ## Problem
@@ -39,18 +39,16 @@ Once we have `round_up`, we can implement the following as well:
 - `int round_closest(int n, int m)`
   - Return the multiple of `m` that is the closest to `n`
 
-We'll talk about floating-point variations (e,g., `double round_up(double n, double m)`) later.
-
 
 ## Solution
 
-I tried ChatGPT first, but it is not yet available in my region. So let's look at StackOverflow instead (which ChatGPT probably learned from anyway).
+Let's look at some existing solutions.
 
 
 ### The StackOverflow Solution 1
 
 The top answer of [this question](https://stackoverflow.com/questions/3407012/rounding-up-to-the-nearest-multiple-of-a-number)
-gives two versions. We'll look at the simpler one that works for positive `n` only:
+gives two versions. We'll look at the simpler one that works for positive `numToRound` only:
 
 ```cpp
 int roundUp(int numToRound, int multiple)
@@ -85,7 +83,7 @@ The fix is simple - we subtract `remainder` first:
 numToRound - remainder + multiple
 ```
 
-Now let's look at the 2nd version, where negative `N`s are supported:
+Now let's look at the 2nd version, where `numToRound` can be negative:
 
 ```cpp
 int roundUp(int numToRound, int multiple)
@@ -107,7 +105,7 @@ int roundUp(int numToRound, int multiple)
 Unfortunately, even after the fix, it still overflows.
 
 Consider `roundUp(-2147483648, 5)`.
-After `abs` it becomes, mathematically, `2147483648`, which overflows our poor 32-bit `int`.
+Applying `abs` to `-2147483648` overflows.
 
 On my machine, this is even "worse" than the first case:
 
@@ -119,7 +117,7 @@ roundUp(-2147483648, 5) = 2147483645   # UB and wrong answer!
 
 ### The StackOverflow Solution 2+
 
-Next, let's took at the second most up-voted answer:
+Next, let's took at the second answer:
 
 ```cpp
 int roundUp(int numToRound, int multiple) 
@@ -142,12 +140,12 @@ There are many solutions of the form:
 (numToRound + multiple - 1) / multiple * multiple
 ```
 
-Unlike the first solution, you can't fix it by simply subtracting 1 first. Sufficiently large `multiple` will overflow. And I've seen solutions like this in production.
+Sufficiently large `multiple` will overflow `(numToRound + multiple - 1)`.
 
 
 ### Alternative Approaches
 
-Let's try "reductionism" - the art of reducing an unsolved problem to a solved problem:
+Let's try "reductionism" - reducing an unsolved problem to a solved problem:
 
 ```cpp
 int round_up(int n, int m) {
@@ -180,9 +178,7 @@ Example:
 - `7 / 3 -> 2`
 - `-7 / 3 -> -2`
 
-Note particularly on the negative case - divide-then-multiply (`n / m * m`) gives us exactly what we want!
-
-(The same reason why the 2nd StackOverflow solution works for all negative inputs.)
+Note in the negative case - divide-then-multiply (`n / m * m`) gives us exactly what we want!
 
 When `n > 0`, if `n` is already a multiple of `m`, the result is simply `n`.
 
@@ -284,11 +280,3 @@ T round_closest(T n, T m) {
     return (n - lo < hi - n) ? lo : hi;
 }
 ```
-
-
-## Afterwords
-
-Perhaps we should consider standardizing these functions?
-The seemingly-trivial [midpoint](https://en.cppreference.com/w/cpp/numeric/midpoint) is standardized.
-I recommend the talk by Marshall Clow [std::midpoint? How Hard Could it Be?](https://youtu.be/sBtAGxBh-XI),
-which inspires me to pay more attention on integral operations.
