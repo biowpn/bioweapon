@@ -363,14 +363,14 @@ std::ostream& operator<<(std::ostream& os, const T& x) {
 Now we can finally print aggregates hassle-free:
 
 ```cpp
-Point p{1, 2, 3};
+Point p(1, 2, 3);
 std::cout << p << '\n';
 // Point(x=1, y=2, z=3)
 
 struct Line {
     Point a, b;
 };
-Line l{{1, 2, 3}, {4, 5, 6}};
+Line l(Point(1, 2, 3), Point(4, 5, 6));
 std::cout << l << '\n';
 // Line(a=Point(x=1, y=2, z=3), b=Point(x=4, y=5, z=6))
 ```
