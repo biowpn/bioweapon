@@ -22,7 +22,7 @@ struct LogInEvent {
 
 ...
 
-void handler(const Event& evt) {
+void handler(const LogInEvent& evt) {
     std::println("Receive LogInEvent: timestamp={} uid={} source={}", evt.timestamp, evt.uid, evt.source);
 }
 ```
@@ -81,11 +81,11 @@ thus,
 
 ## Code generation
 
-Some teams tackle this problem by using *code generation*. They define the structs in an external schema file, usually in an easy-to-parse format like `csv`, `json` or `yaml`, or some interface definition language (IDL). Then, a program reads these schema files and generates C++ codes. This is definitely a sound engineering strategy, and I've used it in production.
+Some teams tackle this problem by using *code generation*. They define the structs in an external schema file, usually in an easy-to-parse format like `csv`, `json` or `yaml`, or some interface definition language (IDL). Then, a program reads these schema files and generates C++ code. This is definitely a sound engineering strategy, and I've used it in production.
 
 There are some minor issues with code generation, though.
 
-* First, sometimes the structs are out of your control; for example, dependencies and third party libraries. You need to either manually add them to your schema file - which brings maintainence burden (ensure scheme file matches the actual definitions); or, enhance the code generator to parse C and/or C++ codes - which is complicating.
+* First, sometimes the structs are out of your control; for example, dependencies and third party libraries. You need to either manually add them to your schema file - which brings maintainence burden (ensure scheme file matches the actual definitions); or, enhance the code generator to parse C and/or C++ code - which is complicating.
 * Second, it complicates your workflow as it requires extra external tooling. It's fine if the code generator is a Python script; but it could also be some 3rd party library/program which you'll need to introduce dependency for and/or build that first.
 
 Alas, *I just want to print a god damn struct!* I don't want to introduce code generation to my project just because!
@@ -259,7 +259,7 @@ auto tie_as_tuple(T& x) {
 }
 ```
 
-I sincerely hope that **P1061** will make it to C++ 26. It'll be a godsend for generic programming!
+I sincerely hope that **P1061** will make it to C++26. It'll be a godsend for generic programming!
 
 
 ### Getting the field names of a struct

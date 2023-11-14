@@ -15,17 +15,17 @@ for (std::string line; std::getline(ifs, line);) {
 }
 ```
 
-It's simple and straightforward, but doesn't compose well with the range-based algorithms of the standard library. That is because a file is not a range, although conceptually we can treat it as a range of strings. For example, in Python:
+It's simple and straightforward, but doesn't compose well with the range-based algorithms of the standard library. That is because a file is not a range, although conceptually we can treat it as a range of lines. For example, in Python:
 
 ```py
 for line in open("hello.txt"):
     # do something with `line`
 ```
 
-We can achieve the same thing in C++ with custom iterators.
+We can achieve the same thing in C++ with **custom iterators**.
 
 Writing conforming iterators, unfortunately, involves some boilerplate code.
-This post provides some templates to help us with that (assuming C++ 20).
+This post provides some code templates to help with that (assuming C++20).
 
 
 
@@ -118,7 +118,7 @@ static_assert(
 ## Output Iterator
 
 Output iterators are very different from input iterators. In fact, they are *barely* iterators;
-They are more like adaptors that wrap the actual function for output in a iterator class.
+They are more like adaptors that wrap some function taking output (a "sink") in a iterator class.
 
 Let's write an output iterator that adds prefix and postfix (the `std::ostream_iterator` adds postfix only):
 

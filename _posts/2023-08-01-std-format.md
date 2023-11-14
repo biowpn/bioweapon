@@ -19,7 +19,7 @@ can it be done by simply replacing `fmt::` with `std::`?
 Printing user types has been a common task. In the past it is done by overloading `operator<<`.
 With **fmtlib**, it is done by providing a formatter class specialization.
 
-The example I've been using (and which many codes were written based on) since 2019 is:
+The example I've been using since 2019 is:
 
 ```cpp
 // the type I want to format
@@ -182,7 +182,7 @@ void print(std::format_string<Args...> fmt, Args&&... args) {
 It is great to have `std::format` available, even though it is quite restricted.
 
 If any of the following is required:
-- C++ 17 or before
+- C++17 or before
 - Dynamic format string
 - `print`
 

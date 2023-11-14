@@ -176,7 +176,7 @@ std::unique_ptr<Dinosaur> make_dinosaur(std::string_view name) {
 
 ## Are we making things better though?
 
-You may wonder. Is it really worth the trouble? All the template codes seem unnecessarily complex!
+You may wonder. Is it really worth the trouble? All the template code seems unnecessarily complex!
 
 The answer is: **it scales better**.
 
