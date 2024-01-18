@@ -1,5 +1,5 @@
 ---
-title: "What the `fun` is that?"
+title: "What the `func` is that?"
 date: 2024-01-18
 ---
 
@@ -46,7 +46,7 @@ As for those 3 other papers in the "References" section:
 - The 2nd one, *Bug 34 - Need type-erased wrappers for move-only callable objects*, has broken link
 - The 3rd one, *P0288R2 "The Need for std::unique_function"*, gives me 404. I changed R2 to R1 in the URL and now it redirects to P0288R1, which is just the 1st paper N4543 but a later revision.
 
-So we essentially have one paper, N4543/P0288R2 to work with. The "Motivation" section is lengthy, but what it says is basically we need non-copyable `function` for the following use cases:
+So I essentially have one paper N4543/P0288R2 to work with. The "Motivation" section is lengthy, but what it says is basically we need non-copyable `function` for the following use cases:
 > - Lambdas with move-only capture: `[u = std::move(u)](io_response r)
 {r.send_next(u);}`
 > - An event dispatching system, for example, might wish to manage ownership of event handler
@@ -54,7 +54,7 @@ objects
 > - Real-world function objects are expected
 to do whatever other objects do ... Non-copyable objects are not uncommon
 
-I'm ... not fully convinced, still. Even the paper points out that there's workaround for wrapping non-copyable callables in `function`, albeit not ideal, by leveraging `reference_wrapper`.
+I'm ... not fully convinced. Even the paper points out that there's workaround for wrapping non-copyable callables in `function`, albeit not ideal, by leveraging `reference_wrapper`.
 
 So I trace one level deeper - the paper that N4543 references, [N4159 `std::function` and Beyond](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4159.pdf), and finally got some answers.
 
@@ -78,12 +78,12 @@ const std::function<void()> f = ftor; // So am I! Const all the way
 f();                                  // Prints "Non-const"
 ```
 
-In fact there's no way to make the code print "Const".
+In fact, there's no way to make the code print "Const".
 
 Well, since `f` makes a copy of `ftor`, it owns a seperate value,
 so it makes sense to be able to call the non-const version.
 
-What's surprising is, despite `f` is `const` qualified (and its call operator is `const`),
+What's surprising is, despite `f` is `const` qualified (and so is its call operator),
 it nevertheless invokes its `ftor` as it was non-const.
 
 Probably, what should've happened is:
@@ -118,8 +118,8 @@ N4159 adds,
 code, but we think the broken code could be fixed with trivial local edits in most cases, and in any
 event, the alternatives look worse.
 
-But as we know now, it didn't happen.
-To date, and probably forever, `std::function` is suffering from this issue.
+But as we know now, the fixes to `std::function` never happen.
+To date (and probably forever), `std::function` is suffering constantly from the issue.
 
 There is another issue with `std::function`:
 invoking an empty instance will throw an exception `std::bad_function_call`.
@@ -128,33 +128,32 @@ but more people think that it is inconsistent with the rest of the standard libr
 (using the value from a wrapper in empty state is undefined behavior; e.g., `unique_ptr`, `optional`)
 and violates the "Zero overhead abstraction" principle.
 
-I guess, in the end, more people wanted to something about the problems of `std::function` than maintaining the status-quo,
-but they couldn't really break `std::function`.
+I guess, in the end, more people wanted to do something about the problems of `std::function` than maintain the status-quo, but they couldn't directly touch `std::function`.
 
 Therefore,
 
 
-## So Here Be `std::move_only_function`
+## Here Be `std::move_only_function`
 
-You are right, the biggest selling point of `std::move_only_function` is not `move_only` as its name suggests,
+You are right, the biggest selling point of `std::move_only_function` is **not** move-only as its name suggests,
 but rather that it fixes the problems of `std::function`:
 
 1. It is const-correct;
-2. No extra check for non-null to raise exception;
-3. Due to 2, it can be made `noexcept`
+2. No extra check for nullness to raise exception;
+3. Due to 2, it can be made `noexcept` if you deem so
 
-Being move-only increases its application space:
+Being move-only just increases its application space:
 it can bind to move-only callables.
 
 However, some time later, we decided that being copyable is also valuable,
-so here comes `std::copyable_function`: it is actually a fixed version of `std::function`,
-which is totally not reflected in its name.
+so here comes `std::copyable_function`:
+it is actually a fixed version of `std::function`, which is totally not reflected in its name.
 
-`std::copyable_function` is the chosen replacement for `std::function`.
+**`std::copyable_function` is the chosen replacement for `std::function`.**
 It remains a doubt whether it'll happen, though.
 Will people replace all of their `std::function` to `std::copyable_function` when upgrading to C++26?
 
-Only in one way would I probably do it:
+Only in one way would I consider doing it:
 
 ```cpp
 namespace my {
@@ -208,7 +207,7 @@ And it would still need to modify the semantics to fix the const correctness bug
 
 With all that said, I do low-key hope that `move_only_function`
 and `copyable_function` would have been introduced this way,
-perhaps under a new primary template in a sub namespace:
+perhaps as a new primary template in a sub namespace:
 
 ```cpp
 namespace std::ranges {
