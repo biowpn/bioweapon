@@ -93,7 +93,7 @@ Probably, what should've happened is:
 const std::function<void()> f = ftor; f(); // prints "Const"
 ```
 
-So, `std::function` needs some fixing, or in N4159's words, "reparing". It lists 4 options:
+So, `std::function` needs some fixing, or in N4159's words, "repairing". It lists 4 options:
 
 1. Add internal synchronization
 2. Require the target type to be const-­callable
