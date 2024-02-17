@@ -329,13 +329,13 @@ and the other kind of "bad" `constexpr` functions that are compile-time only:
 consteval int zero() { return 0; }
 
 template <class T>
-constexpr T f() {
+constexpr T f(T) {
     return zero();
 }
 
 int main(int argc, char**) {
-    f(argc);                 // Error
-    static_assert(f() == 0); // Ok
+    f(argc);                  // Error
+    static_assert(f(0) == 0); // Ok
 }
 ```
 
