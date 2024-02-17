@@ -51,8 +51,22 @@ Here "call" may mean two things:
 ### Can `constexpr` functions call runtime functions?
 
 The answer is:
-- You can write code to call them
-- You can't actually invoke them during compile-time evaluation
+- You can write code to call runtime functions
+- The code must not be reached during compile-time evaluation
+
+```cpp
+constexpr int divide(int a, int b) {
+    if (b == 0) {
+        printf("Divide by zero\n");
+        return 0;
+    } else {
+        return a / b;
+    }
+}
+
+static_assert( divide(6, 3) == 2 );  // Ok
+static_assert( divide(0, 0) == 0 );  // Error: call to runtime function `printf`
+```
 
 This is akin to the treatment of exceptions in `constexpr` functions;
 you can write `throw`, you just can't `catch` - any `throw` reached will trigger an error.
@@ -62,18 +76,19 @@ allows you to even write:
 
 ```cpp
 // runtime function
-int g();
+void g();
 
 // Ok since C++23
 constexpr int f() {
-    return g();
+    g();
+    return 0;
 }
 ```
 
 The above code compiles, even though any compile-time invocation of `f` will cause an error:
 
 ```cpp
-static_assert( f() == 0 ); // Error; `f` cannot be evaluated at compile-time
+static_assert( f() == 0 ); // Error: call to runtime function `g`
 ```
 
 Ordinary invocation is fine:
@@ -83,26 +98,26 @@ int n = f();  // Ok
 ```
 
 Such functions like `f` are a bit deceiving:
-despite the `constexpr` specifier, they can't actually be evaluated at compile time.
+despite the `constexpr` specifier, they can't be evaluated at compile time.
 
-With this example in mind, `constexpr` functions:
-- **may** be available for compile-time evaluation, but no guarantee
+With this example in mind, a `constexpr` function:
+- **may** be available for compile-time evaluation, but no guarantee that it can
 
 
 ### Can `consteval` functions call runtime functions?
 
 At first, it may seem the answer is "no". `consteval` functions only evaluate at compile time,
-so any call to runtime function must be an error.
+so any call to runtime function must be an error, right?
 
 But C++ is actually quite permissive here:
 just like `constexpr` functions, you can write code to call runtime functions,
-so long as you don't actually call them as part of the compile-time evaluation.
+so long as you don't actually reach that code during compile-time evaluation.
 
 ```cpp
 // runtime function
 int g();
 
-// Ok, even though it can never be called
+// Ok, even though `f` can never be called
 consteval int f() {
     return g();
 }
@@ -189,7 +204,7 @@ both of which have to do with passing parameters down to `consteval` functions.
 Firstly, inside the `if consteval` block,
 `constexpr` functions' formal parameters can be used as arguments for `consteval` functions.
 
-This is how our first example works:
+This is why our first example works:
 
 ```cpp
 consteval size_t strlen_ct(const char* s) {
@@ -248,7 +263,7 @@ consteval auto foo(int i) {
 ```
 
 If `i` is allowed to be a constant expression,
-then the above function would return different types for different values of `i`.
+then `foo` would return different types for different values of `i`.
 Functions can't do that (any function has exactly one return type); only function templates can.
 
 Therefore, some language changes are needed here for this to work.
@@ -263,8 +278,7 @@ Anyway, what we have right now is:
 #### Escalation
 
 The second thing is,
-if a `constexpr` function template calls a `consteval` function with its parameters outside an `if consteval` block,
-then it becomes `consteval`:
+if a `constexpr` function template, outside an `if consteval`, calls a `consteval` function with some non-constant-expression arguments, then it becomes `consteval`:
 
 ```cpp
 consteval int identity_ct(int x) {
@@ -273,20 +287,17 @@ consteval int identity_ct(int x) {
 
 template <class T>
 constexpr T identity(T x) {
-    // calls consteval `identity_ct` outside `if consteval`,
+    // not in a `if consteval` block,
+    // calls consteval `identity_ct` with `x` (not a constant expression),
     // which triggers "escalation",
     // which makes `identity<T>` consteval
     return identity_ct(x);
 }
-```
 
-And usage:
-
-```cpp
 static_assert( identity(0) == 0 ); // Ok
 
 int main(int argc, char** argv) {
-    // Error: identity can no longer be invoked ordinarily (with runtime values)
+    // Error: `identity` can no longer be invoked ordinarily (with runtime values)
     return identity(argc);
 }
 ```
@@ -294,7 +305,7 @@ int main(int argc, char** argv) {
 Note that `consteval` escalation works in a few other cases, but free function is not one of them:
 
 ```cpp
-// still an error
+// still an error; `identity` does not become consteval
 constexpr int identity(int x) {
     return identity_ct(x);
 }
