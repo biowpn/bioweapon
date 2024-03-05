@@ -7,13 +7,13 @@ date: 2024-03-05
 
 **RAII** stands for "Resource Acquisition Is Initialization".
 It's ... probably one of the worst named term in C++,
-at the same time one of the most powerful programming idioms.
-The naming is bad because it leaves out the (argubly more important) second half -
-resource release is finalization. Put it simple: the destructor does some clean up.
+at the same time, one of the most powerful programming idioms.
+The naming is bad because it leaves out the argubly more important second half - 
+Resource Release Is Finalization. Put it simple: the destructor does some clean up.
 
 ```cpp
 {
-    std::ofstream ofs; // Constructor does not necessarily acquire resource
+    std::ofstream ofs; // Constructor need not acquire resource
     if (/* some runtime condition */) {
         ofs.open("hello.txt");
         ofs << "Hello";
@@ -34,39 +34,26 @@ There are numerous benefits to RAII.
 Resource safety is one (prevent resource leak),
 program correctness is another (e.g., not releasing mutex causes deadlock).
 
-```cpp
-// Is `f` resource-safe?
-void f(const char* file1, const char* file2) {
-    std::FILE* fp1 = std::fopen(file1, "rb");
-    if (fp1 == nullptr) { return; }
-    std::FILE* fp2 = std::fopen(file2, "wb");
-    if (fp2 == nullptr) { return; }
-    char buf[64];
-    std::size_t n;
-    while ((n = std::fread(buf, 1, sizeof(buf), fp1)) != 0) {
-        // ... do something with `buf` ...
-        std::fwrite(buf, 1, n, fp2);
-    }
-    std::fclose(fp1);
-    std::fclose(fp2);
-}
-```
-
-RAII even composes nicely:
+RAII even composes nicely,
+thanks to the member initialization/finalization order guaranteed by C++:
 
 ```cpp
-struct A { A(); /* Constructor may throw */ ... };
-struct B { B(); /* Constructor may throw */ ... };
+// Assume A, B, C are all RAII classes.
+struct A { A() /* Constructor may throw */; ~A() noexcept; };
+struct B { B() /* Constructor may throw */; ~B() noexcept; };
+
 struct C {
     A a;
     B b;
+    // Initialization order is same as declaration order (a, b)
+    // Finalization order is the exact inverse (b, a)
 
     C()
     // Construct `a`, then `b`;
-    // if `b` throws, destroy `a`, C() is not run
+    // if `b` throws, destroy `a`; C() is not run
     { // `a` and `b` now good
-        ... // initialization depends on `a` and `b`
-            // if throw, destroy `b` then `a`, ~C() is not run
+        ... // initialization, which may depend on `a` and `b`
+            // if throw, destroy `b` then `a`; ~C() is not run
     }
 
     ~C() noexcept
@@ -80,7 +67,7 @@ struct C {
 And all of these good things are done automatically by the compiler for us!
 This greatly reduces developer's cognitive load; we can just "write it and forget about it".
 
-Anyway, if RAII is so great, and has been available since C++98, a natural question to ask is:
+But, if RAII is so great, and has been available since C++98, a natural question to ask is:
 
 
 ## Why is RAII not everywhere?
@@ -88,7 +75,8 @@ Anyway, if RAII is so great, and has been available since C++98, a natural quest
 Unfortunately, we still see manual resource management code,
 or even worse - the lack of any such code, especially in legacy codebase.
 Programmer's laziness/incompetence may be blamed, but a fact that should not be overlooked is:
-writing a correct and useful RAII class is somewhat tedious.
+
+Writing a good RAII class by hand is tedious.
 
 - First off, destructor. Does the class have an empty state? Is the destructor `noexcept`?
 - Next, you want to make the class move-only because the resource is expensive/impossible to copy,
@@ -105,20 +93,20 @@ When time-to-market is important, programmers may just give in.
 Fortunately, there's a way out:
 
 
-## `unique_ptr` to the rescue
+## `std::unique_ptr` to the rescue
 
-`std::unique_ptr` already solved the same problems.
+`unique_ptr` already solved the same problems.
 It can be customized to manage any resource, not just heap-allocated memory.
 The trick is to provide a custom deleter:
 
 ```cpp
 template<
     class T,
-    class Deleter = std::default_delete<T> // Customization point
+    class Deleter // Customization point
 > class unique_ptr;
 ```
 
-Here are a few examples.
+This way, we can eliminate much of the boilerplate when it comes to writing RAII classes. Here are a few examples.
 
 
 ### `file_ptr` for `std::FILE`
@@ -139,20 +127,7 @@ Note that:
 
 - The deleter is simply a callable, with the pointer as argument
 - There's no need to check for null-ness; `unique_ptr` does that for us
-- Consider marking the call operator `noexcept` whereas possible
-
-With `file_ptr`, the example at the beginning can be improved:
-
-```cpp
-void f(const char* file1, const char* file2) {
-    file_ptr fp1 { std::fopen(file1, "rb") };
-    if (fp1 == nullptr) { return; }
-    file_ptr fp2 { std::fopen(file2, "wb") };
-    if (fp2 == nullptr) { /* BUG FIX: fp1 is now properly closed!*/ return; }
-    ...
-    // no more std::fclose
-}
-```
+- Consider marking the call operator `noexcept` if possible
 
 
 ### Memory-mapped File
@@ -198,7 +173,7 @@ As with all customized `unique_ptr`,
 it is highly recommended to provide a factory function as a substitute for `make_unique`:
 
 ```cpp
-inline mapped_mem_ptr make_mapped_mem(void* addr, size_t length, int prot, int flags, int fd, off_t offset) {
+[[nodiscard]] inline mapped_mem_ptr make_mapped_mem(void* addr, size_t length, int prot, int flags, int fd, off_t offset) {
     void* p = ::mmap(addr, length, prot, flags, fd, offset);
     if (p == MAP_FAILED) { // MAP_FAILED is not NULL
         return nullptr;
@@ -216,15 +191,20 @@ Can we still use `unique_ptr` for it?
 
 The answer is yes. It turns out that `unique_ptr<T, D>::pointer` doesn't need to be an actual pointer;
 it can be any type that satisfies [NullablePointer](https://en.cppreference.com/w/cpp/named_req/NullablePointer)!
-So can just can make it `int`?
 
-... Not so fast.
+So can it be `int`?
+
+... Not quite.
 A requirement of `NullablePointer` is that it must be able to construct from `nullptr`,
-which `int` is not.
-And even if it could, we probably wouldn't want to do so - `0` is a valid file descriptor,
-and UNIX uses `-1` for file descriptor nullness.
+which `int` cannot:
 
-So we first roll up a wrapper type `int`:
+```cpp
+int i = nullptr;  // ill-formed, for good reasons
+```
+
+And even if it could, we probably wouldn't want it to - say `i` is initialized to `0`, but `0` is a valid file descriptor, and UNIX actually uses `-1` for file descriptor nullness.
+
+Therefore, we must first roll up a wrapper type:
 
 ```cpp
 // Intentionally non-RAII
@@ -251,14 +231,14 @@ struct fd_closer {
 };
 ```
 
-The member typedef `pointer` is important because if it is present,
-`unique_ptr` will use it as the `pointer` type it manages;
+The member typedef `pointer` is important.
+When it is present, `unique_ptr` will use it as the `pointer` type;
 otherwise, it falls back to `T*`.
 
 So what we should use for `T`?
 
 In this case, since we don't do `*` or `->` (the only places where `T` is used),
-it can be ... anything:
+it can literally be anything:
 
 ```cpp
 using unique_fd = std::unique_ptr<int,             fd_closer>; // Ok
@@ -266,33 +246,36 @@ using unique_fd = std::unique_ptr<file_descriptor, fd_closer>; // Ok
 using unique_fd = std::unique_ptr<void,            fd_closer>; // Ok
 ```
 
-... Even though they are all not exactly right. We are not managing `int` or `file_descriptor` or `void`,
-but rather some UNIX file that is hidden from us.
+... Even though they are all not quite right. We are not managing `int` or `file_descriptor` or `void`, but rather some UNIX file that is hidden from us.
 
-Therefore, for readablity, it's worth to make a opaque type for it:
+For readablity, it's worth to make a opaque type for it:
 
 ```cpp
 struct unix_file;
 using unique_fd = std::unique_ptr<unix_file,       fd_closer>; // Ok, recommended
 ```
 
-We can think of `Deleter::pointer` as a handle that refers to some resource.
+The takeaway is: we can think of `Deleter::pointer` as a handle that refers to some resource.
 
-On a side note, there's a gotcha with `unique_fd` implemented this way:
+On a side note, there's a gotcha our `unique_fd`:
 
 ```cpp
-unique_fd fd{STDIN_FILENO}; // `fd` initialized to -1, because STDIN_FILENO expands to 0, and a literal zero is also nullptr; unique_ptr::unique_ptr(nullptr) is selected
-unique_fd fd{int(STDIN_FILENO)}; // Now initialized to 0 as intended
+unique_fd fd{STDIN_FILENO}; // `fd` initialized to -1! Because STDIN_FILENO expands to 0, and a literal zero is also nullptr; the overload unique_ptr(nullptr) is selected
+unique_fd fd{int(STDIN_FILENO)}; // Now selects unique_ptr(pointer) due to implicit conversion, and initialized to 0 as intended
 unique_fd fd{file_descriptor(STDIN_FILENO)}; // Ok too
 ```
+
+This is one of those "C++ being C++" moments and why I have a love/hate abusive relationship with it.
+Anyway, as suggested above, provide a factory function for your RAII class,
+so that pitfalls like this can be minimized.
 
 
 ## `unique_ptr` is not all there is
 
-So far we've shown that `unique_ptr` can be used to manage resources that are referred to by some handle.
+So far we've shown that `unique_ptr` can be customized to manage resources that are referred to by some handle.
 But it is not the most general form of RAII.
 Sometimes there isn't any resource to manage, at least not explicitly;
-we may need to do some rollback when some operation fails, for example.
+we just desire to do some rollback when some operation fails, for example.
 
 There is where `scope_exit` and the like comes in:
 
@@ -313,11 +296,11 @@ void sort_database_safe() {
 
 Popularized by Andrei Alexandrescu,
 these handy functions didn't quite make it to the standard yet, hence they are in `<experimental/scope>`.
-There are various third party implementation available as well.
+There are also various third party implementations available.
 
 
 ## Afterword
 
 While it has limitations, `std::unique_ptr` is a great template for us to implement custom RAII classes.
 Not only the code is usually more concise and correct, but also we can have a unified API
-for different resources.
+for managing a great variety of resources in the codebase, which is another win.
