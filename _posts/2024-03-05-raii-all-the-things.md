@@ -9,7 +9,9 @@ date: 2024-03-05
 It's ... probably one of the worst named term in C++,
 at the same time, one of the most powerful programming idioms.
 The naming is bad because it leaves out the argubly more important second half - 
-Resource Release Is Finalization. Put it simple: the destructor does some clean up.
+Resource Release Is Finalization.
+
+Put it simple: the destructor does some clean up.
 
 ```cpp
 {
@@ -33,7 +35,6 @@ all dynamically-sized containers, `unique_ptr`, `scope_lock` (`lock_guard`), and
 There are numerous benefits to RAII.
 Resource safety is one (prevent resource leak),
 program correctness is another (e.g., not releasing mutex causes deadlock).
-
 RAII even composes nicely,
 thanks to the member initialization/finalization order guaranteed by C++:
 
@@ -93,7 +94,7 @@ When time-to-market is important, programmers may just give in.
 Fortunately, there's a way out:
 
 
-## `std::unique_ptr` to the rescue
+## std::unique_ptr to the rescue
 
 `unique_ptr` already solved the same problems.
 It can be customized to manage any resource, not just heap-allocated memory.
@@ -109,7 +110,7 @@ template<
 This way, we can eliminate much of the boilerplate when it comes to writing RAII classes. Here are a few examples.
 
 
-### `file_ptr` for `std::FILE`
+### Smart File Pointer
 
 Let's start with something simple:
 
@@ -260,14 +261,19 @@ The takeaway is: we can think of `Deleter::pointer` as a handle that refers to s
 On a side note, there's a gotcha our `unique_fd`:
 
 ```cpp
-unique_fd fd{STDIN_FILENO}; // `fd` initialized to -1! Because STDIN_FILENO expands to 0, and a literal zero is also nullptr; the overload unique_ptr(nullptr) is selected
-unique_fd fd{int(STDIN_FILENO)}; // Now selects unique_ptr(pointer) due to implicit conversion, and initialized to 0 as intended
+unique_fd fd{STDIN_FILENO}; // `fd` initialized to -1!
+// Because STDIN_FILENO expands to 0,
+// and a literal zero is also nullptr;
+// the overload unique_ptr(nullptr) is selected
+
+unique_fd fd{int(STDIN_FILENO)}; // Now selects unique_ptr(pointer) due to implicit conversion,
+// and initialized to 0 as intended
+
 unique_fd fd{file_descriptor(STDIN_FILENO)}; // Ok too
 ```
 
 This is one of those "C++ being C++" moments and why I have a love/hate abusive relationship with it.
-Anyway, as suggested above, provide a factory function for your RAII class,
-so that pitfalls like this can be minimized.
+Anyway, as suggested above, providing a factory function for your RAII class minimizes pitfalls like this.
 
 
 ## `unique_ptr` is not all there is
@@ -303,4 +309,4 @@ There are also various third party implementations available.
 
 While it has limitations, `std::unique_ptr` is a great template for us to implement custom RAII classes.
 Not only the code is usually more concise and correct, but also we can have a unified API
-for managing a great variety of resources in the codebase, which is another win.
+for managing a great variety of resources in the codebase, and consistency is another win.
