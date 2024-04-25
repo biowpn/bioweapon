@@ -178,14 +178,22 @@ reduce:
 ```
 
 This makes `reduce` parallelizable - you can chop the input range into `N` parts and have `N` workers doing one each, then sum up the sub-sums.
-The standard library provides this functionality out-of-the-box, by giving the `ExecutionPolicy` overloads to `reduce`.
+The standard library provides this functionality out-of-the-box, by giving the `ExecutionPolicy` overloads to `reduce`:
+
+```cpp
+template< class ExecutionPolicy, class ForwardIt, class T >
+T reduce( ExecutionPolicy&& policy,
+          ForwardIt first, ForwardIt last, T init );
+
+// ... and 2 more
+```
 
 Of course, this freedom of rearrangement comes at a cost, at the API level:
-the binary operation `op` of `reduce` needs to accept all combinations of `result-type` and `element-type` should they differ:
+The binary operation `op` of `reduce` needs to accept all combinations of `result-type` and `element-type` should they differ:
 - `op(result-type, element-type)`
 - `op(element-type, result-type)`
 - `op(result-type, result-type)`
-- `op(element-type, result-type)`
+- `op(element-type, element-type)`
 
 In contrast, `accumulate` needs only
 - `op(result-type, element-type)`
@@ -198,7 +206,7 @@ double sum_reduce(std::span<double> nums) {
 }
 ```
 
-compiles to [very different assembly](https://godbolt.org/z/bK19xEjvh) from that using `accumulate`.
+compiles to [very different assembly](https://godbolt.org/z/bK19xEjvh) from the one using `accumulate`.
 
 The interesting part is:
 
@@ -224,8 +232,7 @@ Suppose the input is `[a0, a1, a2, a3]`, the above is equivalent to:
 s += (a0 + a1) + (a2 + a3)
 ```
 
-`accumulate` isn't allowed to do this, because it is required to sum in the input order.
-It must do:
+`accumulate` isn't allowed to do this, because it is required to sum in the input order. It must do:
 
 ```
 s += a0
@@ -244,7 +251,7 @@ In other words, floating point addition is not associative.
 
 In general, `reduce` would like `op` to be commutative (`op(a, b) == op(b, a)`) and associative (`op(op(a, b), c) == op(a, op(b, c))`). If not, the behavior is *non-deterministic*.
 Now, how many times do you see the standard uses the word "non-deterministic"?
-I'll take it anytime over "undefined behavior"!
+I'll take it anytime over "undefined"!
 
 Oh, did I mention that `reduce` lives in `<numeric>` as well?
 
@@ -268,11 +275,12 @@ template< ranges::input_range R, class T, /* binary-op */ F >
 constexpr auto fold_left( R&& r, T init, F f );
 ```
 
-Like `accumulate`, it needs an `init` value,
-and is required to do summation in the input order
+Like `accumulate`, `fold_left` needs an `init` value,
+and is required to do the summation from `begin(r)` to `end(r)`
 (which means it cannot be parallelized).
 
-Unlike `accumulate`, the result type is not `T`. Nor is it the element type like `reduce`.
+Unlike `accumulate`, the result type of `fold_left` is not `T`.
+Nor is it the element type, like `reduce`.
 Rather, it is the return-type of the binary operation `F`.
 This theoretically makes it less susceptible to the type-mismatch error:
 
@@ -295,7 +303,8 @@ and `std::plus<>{}` is an object. Function arguments can only be values.*
 3. *If I had a magic wand, I would go back to 1998 and make `std::plus` and friends just such functors*
 
 
-For `fold_left`, the binary operation is not defaulted, so you always need to supply one.
+For `fold_left`, the binary operation is not defaulted,
+so you always need to supply one.
 
 Plug `fold_left` in our example:
 
@@ -306,8 +315,8 @@ double sum_fold_left(std::span<double> nums) {
 ```
 
 It *bascially* compiles to the same assembly as `accumulate`,
-with the make-it-even trick present. (It's just `fold_left` [makes one more comparison](https://godbolt.org/z/aofq4Krf1)
-before going to the happy case. I'm not sure why.)
+with the make-it-even trick present. It's just `fold_left` [makes one more comparison](https://godbolt.org/z/aofq4Krf1)
+before going to the happy even case. I'm not sure why.
 
 What if you're feeling lazy and don't want to supply the `init`?
 That's where `fold_left_first` comes in:
@@ -317,24 +326,24 @@ template< ranges::input_range R, /* binary-op */ F >
 constexpr auto fold_left_first( R&& r, F f );
 ```
 
-Like `fold_left`, its result type depends on `F`, hence `f` cannot be omitted.
+Like `fold_left`, the binary operation `f` cannot be omitted.
 
-Unlike `reduce`, when `r` is empty, it doesn't return `{}` of the result type;
+Unlike `reduce`, when `r` is empty, `fold_left_first` doesn't return `{}` of the result type;
 rather, it returns an empty optional. Yep, the return type of `fold_left_first`
-is not the result type `U`, but an `std::optional<U>`.
+is not the result type `U`, but `std::optional<U>`.
 
-`fold_left_first` uses the first element of `r` as the initial value.
-And by doing do, `fold_left_first` calls `f` *one fewer time* than `fold_left` / `reduce` / `accumulate`.
+If `r` is not empty, `fold_left_first` uses the first element of `r` as the initial value.
+By doing do, `fold_left_first` calls `f` *one fewer time* than `fold_left` / `reduce` / `accumulate`.
 This makes sense for reduction like `max` and `min` which does not have a meaning value for empty ranges.
 
 
 ## std::ranges::reduce?
 
-If `fold_left` is a replacement for `accumulate` (despite not 100% equivalent),
-how about `reduce`? Will we get `std::ranges::reduce`?
+Recall that `reduce` can perform the summation in any order,
+which is not something `fold_left_*` can do. So will we get `std::ranges::reduce`?
 
 Well, there is the paper [P2760 - A Plan for C++26 Ranges](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2023/p2760r0.html#tier-1),
-where it lists `reduce` as `Tier 1` target.
+where it lists `reduce` as a `Tier 1` target.
 However, `std::reduce` has execution policy support too,
 and adding parallelism to range algorithms is a [**big** project](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3179r0.html).
 
@@ -353,7 +362,7 @@ template <class E, class R>  auto f(E&& policy, R&& range);
 So that's a `x4` for every parallelizable algorithm,
 and that's not counting the non-range ones in `std::`, which makes it `x6`.
 And if all they do is but to forward to `std::reduce`,
-we might as well DIY and use `std::reduce` today.
+we might as well use `std::reduce` directly.
 
 For all the reasons, I expect we'll stick to `std::reduce` for a while.
 
