@@ -4,14 +4,6 @@ date: 2024-05-03
 ---
 
 
-*Disclaimer: I'm not an expert on C++ language rules.
-Feedback/correction is welcome: https://github.com/biowpn/bioweapon/issues*
-
-*Recommended materials: [This talk by Robert Leahy](https://youtu.be/pbkQG09grFw)
-and [This Paper](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0593r6.html)*
-
-
-
 ## Intro
 
 Consider the following code:
@@ -234,3 +226,6 @@ Lifetime is a very complex topic, but at the same time it is so fundamental to t
 that it involves everyone. As an average user, there is quite a lot to learn if we want to
 write both standard-conforming and maximally performant code. Hopefully, the future version of C++
 will make writing such code more accessible.
+
+*Recommended materials: [This talk by Robert Leahy](https://youtu.be/pbkQG09grFw)
+and [This Paper](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0593r6.html)*
