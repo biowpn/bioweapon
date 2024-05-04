@@ -228,5 +228,7 @@ that it involves everyone. As an average user, there is quite a lot to learn if 
 write both standard-conforming and maximally performant code. Hopefully, the future version of C++
 will make writing such code more accessible.
 
-*Recommended materials: [This talk by Robert Leahy](https://youtu.be/pbkQG09grFw)
-and [This Paper](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0593r6.html)*
+Recommended materials:
+- [This talk by Robert Leahy](https://youtu.be/pbkQG09grFw)
+- [P0593 - Implicit creation of objects for low-level object manipulation](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0593r6.html)
+- [An (In-)Complete Guide to C++ Object Lifetimes](https://www.jonathanmueller.dev/talk/lifetime/)
