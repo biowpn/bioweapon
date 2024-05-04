@@ -12,11 +12,10 @@ Consider the following code:
 struct Point { int x, y; };
 
 void foo(unsigned char* buf, size_t len) {
-    if (len == sizeof(Point)) {
-        Point* p = reinterpret_cast<Point*>(buf);
-        if (p->x == 0) {
-            // ...
-        }
+    assert(len == sizeof(Point));
+    Point* p = reinterpret_cast<Point*>(buf);
+    if (p->x == 0) {
+        // ...
     }
 }
 ```
@@ -48,17 +47,20 @@ One way is to copy the bytes out:
 
 ```cpp
 void foo(unsigned char* buf, size_t len) {
-    if (len == sizeof(Point)) {
-        Point point;                    // a Point is created
-        std::memcpy(&point, buf, len);
-        if (point.x == 0) {             // Ok
-            // ...
-        }
+    assert(len == sizeof(Point));
+    Point point;                    // a Point is created
+    std::memcpy(&point, buf, len);
+    if (point.x == 0) {             // Ok
+        // ...
     }
 }
 ```
 
 But this involves extra copying, so it is not optimal.
+For small struct like `Point`, this copying doesn't matter;
+in real use cases, the struct may be much bigger,
+and one may skip processing by just looking at a few bytes at the start
+(e.g., checking message header and skip uninterested types).
 
 Is there an way to do this without copying? In other words, can we create a `Point` in-place?
 
@@ -66,11 +68,10 @@ The answer is yes, with [std::start_lifetime_as](https://en.cppreference.com/w/c
 
 ```cpp
 void foo(unsigned char* buf, size_t len) {
-    if (len == sizeof(Point)) {
-        Point* p = std::start_lifetime_as<Point>(buf);
-        if (p->x == 0) {
-            // ...
-        }
+    assert(len == sizeof(Point));
+    Point* p = std::start_lifetime_as<Point>(buf);
+    if (p->x == 0) {
+        // ...
     }
 }
 ```
