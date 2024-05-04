@@ -13,7 +13,7 @@ struct Point { int x, y; };
 
 void foo(unsigned char* buf, size_t len) {
     if (len == sizeof(Point)) {
-        Point* p = reinterpret_cast<Point*>(p);
+        Point* p = reinterpret_cast<Point*>(buf);
         if (p->x == 0) {
             // ...
         }
@@ -67,7 +67,7 @@ The answer is yes, with [std::start_lifetime_as](https://en.cppreference.com/w/c
 ```cpp
 void foo(unsigned char* buf, size_t len) {
     if (len == sizeof(Point)) {
-        Point* p = std::start_lifetime_as<Point>(p);
+        Point* p = std::start_lifetime_as<Point>(buf);
         if (p->x == 0) {
             // ...
         }
