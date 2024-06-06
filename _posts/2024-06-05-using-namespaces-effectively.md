@@ -204,7 +204,9 @@ bool operator<(const Person& lhs, const Person& rhs) {
 
 And suddenly everything compiles and works.
 
-To this day, I still don't fully understand the *why*. The compiler error message only suggests that the `operator<` defined in the global namespace isn't being considered a candidate at all. But why? Is it because `sort` is under `namespace std` so it doesn't look at the outer global namespace? That doesn't seem to be the case because this works:
+- I didn't understand the *why* until this post was published and received [this reply](https://www.reddit.com/r/cpp/comments/1d9bzec/comment/l7e2j2w/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button) from reddit.
+
+The compiler error message only suggests that the `operator<` defined in the global namespace isn't being considered a candidate at all. But why? Is it because `sort` is under `namespace std` so it doesn't look at the outer global namespace? That doesn't seem to be the case because this works:
 
 ```cpp
 namespace your { // unrelated namespace
@@ -360,9 +362,11 @@ struct gem::bar_traits<int> {}; // Error
 ```
 
 With `inline namespace`, you can.
-There may be some other arcane name-lookup difference.
 
-The recommendation is: **prefer `inline namespace`** for this purpose.
+There may be some other arcane name-lookup difference,
+but the recommendation stays: 
+
+- **Prefer `inline namespace`** over `using namespace` for library multi-versioning.
 
 
 
