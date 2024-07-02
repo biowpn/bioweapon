@@ -90,6 +90,8 @@ Alas, the above *almost* works, except of course `std::min` has to be wrapped in
 auto min_v = std::ranges::fold_left(numbers, INT_MAX, [](auto const& one, auto const& two){ return std::min(one, two); });
 ```
 
+Again, the lambda does nothing but forwarding its arguments to another binary function.
+
 
 ### Yet Another Case
 
@@ -165,25 +167,7 @@ return value perfect forwarding, `noexcept`-ness preservation, etc. We'll see an
 
 ## Let's Get Down to **invoke**
 
-Since C++17, we have `std::invoke`, which is a generalization that unifies calling regular pointers-to-functions and pointers-to-member-functions:
-
-```cpp
-struct Bar {
-    void member_func(int, int);
-};
-
-void free_func(Bar&, int, int);
-
-Bar  bar;
-Bar* pbar = &bar;
-auto pf  = &free_func;         // pointer-to-function
-auto pmf = &Bar::member_func;  // pointer-to-member-function
-
-std::invoke(pf, bar, 1, 1);    // Ok; same as pf(bar, 1, 1)
-std::invoke(pmf, bar, 2, 2);   // Ok; same as (bar.*pmf)(2, 2)
-std::invoke(pmf, pbar, 3, 3);  // Ok; same as (bar->*pmf)(3, 3)
-```
-
+Since C++17, we have `std::invoke`, which is a generalization that unifies calling callables.
 Now, a natural question is, can `std::invoke` really call *anything*? That is, given `f(arg)` is well-formed, is `std::invoke(f, arg)` always well-formed?
 
 The answer is No, again due to function overloading:
@@ -199,7 +183,7 @@ std::invoke(f, 42);  // Error
 This example is especially dissatisfying. From the callsite `invoke(f, 42)`,
 there is clearly only one `f` that makes `f(42)` well-formed. And `invoke` knows its arguments too.
 We even have `concepts` which are supposed to help with overload resolution.
-Alas, the way C++ type system does not work like this.
+Alas, the C++ type system does not work like this.
 
 
 
@@ -227,13 +211,14 @@ std::invocable<int> auto g = f;  // error! cannot deduce the type of `g`
 ```
 
 All the `<ranges>` algorithms, `std::bind_front`, and `std::invoke`, *require* their arguments to be "typed".
-You can't pass something that does not have a type as their arguments!
+You can't pass something that does not have a type to a function!
 
 And lambdas work *precisely* because they have a type (even though the type cannot be spelled). Also, they can implicitly capture overload sets.
 
 This is part of the reason why lambdas are everywhere.
-These days, we basically can't work with `<ranges>` or any APIs that accept callables without them.
-That said, the fact that we *need* lambdas to do even the simplest tasks suggests flaws in the language.
+Without them, we basically can't work with `<ranges>` or APIs that accept callables.
+
+The fact that we *need* lambdas to do even the simplest tasks is just ... not nice.
 
 
 
