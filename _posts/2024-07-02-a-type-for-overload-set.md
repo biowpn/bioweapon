@@ -269,8 +269,8 @@ struct Bar{
 };
 
 Bar bar;
-auto f = std::bind_front(OVERLOAD(&Bar::foo), bar);
 
+auto f = std::bind_front(OVERLOAD(&Bar::foo), bar);
 f(42);  // error: no matching function for call to 'Bar::foo(const Bar, int)'
 ```
 
@@ -286,6 +286,20 @@ We have to prepare a separate macro `OVERLOAD_MF` to handle overloaded member fu
         return (std::forward<decltype(self)>(self).fun)(                       \
             std::forward<decltype(args)>(args)...);                            \
     }
+```
+
+And use it as
+
+```cpp
+struct Bar {
+    int foo(int);
+    int foo(int) const;
+};
+
+Bar bar;
+
+auto f = OVERLOAD_MF(Bar::foo);  // Note: without the &
+std::invoke(f, bar, 42);  // Ok
 ```
 
 I do not know of a way to unify `OVERLOAD` and `OVERLOAD_MF` into one, in the general case.
@@ -307,10 +321,11 @@ auto g = OVERLOAD(f);
 auto pg = static_cast< void(*)(int) >(g);  // (A)
 ```
 
-(A) does not work. `g` is a capture-less generic lambda, so it should be able to convert to function pointers.
-The problem is, we cannot find a set of template parameters that specializes its `operator()` to be `void(int)`,
-since we defined it as `(auto&&... args)` so all parameter types must be references.
-It *would* work had we defined `g` as `(auto... args)`, but that would make it less functional in the calling use case.
+Unfortunately, (A) does not work. But, `g` is a capture-less generic lambda, so it should be able to convert to function pointers, right?
+
+The problem is, we cannot find a set of template parameters that specializes `g`'s `operator()` to be `void(int)`,
+since we defined it as `(auto&&... args)`. For any function pointer it can convert to, all parameter types must be references; for instance, `void(int&&)`.
+It *would* work had we defined `g` as `(auto... args)`, but that means we are passing every argument by value.
 
 In short, lambdas can help us, but only to some extent. Which, for most use cases, will *probably* be enough.
 
