@@ -199,9 +199,10 @@ void f(int);
 void f(int, int);
 // `f` is an overload set with 2 members
 
-using FF = decltype(f);  // error! overload set has not type
-
 auto g = f;  // error! cannot deduce the type of `g`
+
+// This is because:
+using FF = decltype(f);  // error! overload set has not type
 ```
 
 The following doesn't work either, because constraints are only checked *after* the type is deduced:
@@ -210,15 +211,17 @@ The following doesn't work either, because constraints are only checked *after* 
 std::invocable<int> auto g = f;  // error! cannot deduce the type of `g`
 ```
 
-All the `<ranges>` algorithms, `std::bind_front`, and `std::invoke`, *require* their arguments to be "typed".
-You can't pass something that does not have a type to a function!
+Functions (or templates thereof) such as `std::bind_front` and `std::invoke` accept *objects* as arguments,
+and objects have to be uniquely typed; you can't pass something that does not have a type to a function!
 
-And lambdas work *precisely* because they have a type (even though the type cannot be spelled). Also, they can implicitly capture overload sets.
+And lambdas work *precisely* because they have a type (even though the type cannot be spelled).
+That, and they can implicitly capture overload sets.
 
-This is part of the reason why lambdas are everywhere.
-Without them, we basically can't work with `<ranges>` or APIs that accept callables.
+Most functions in the standard libraries are templated or overloaded, or both; in other words, overload sets.
+This means they can't be passed around function boundary directly; they have to be wrapped in a lambda.
+You can see why lambdas are everywhere.
 
-The fact that we *need* lambdas to do even the simplest tasks is just ... not nice.
+But, the fact that we *need* lambdas to do even the simplest tasks is just ... not nice.
 
 
 
@@ -234,7 +237,7 @@ void f(int, int);
 
 using FF = decltype(f);  // Proposed: `FF` is a unique type for overload set `f`
 
-auto g = f;  // Proposed ok, `g` has the same type as `FF`
+auto g = f;  // Proposed ok
 
 // Now `g` can be passed around like any other object
 ```
@@ -321,11 +324,16 @@ auto g = OVERLOAD(f);
 auto pg = static_cast< void(*)(int) >(g);  // (A)
 ```
 
-Unfortunately, (A) does not work. But, `g` is a capture-less generic lambda, so it should be able to convert to function pointers, right?
+Unfortunately, (A) does not work. But, `g` is a capture-less lambda, so it should be able to convert to function pointers, right?
 
-The problem is, we cannot find a set of template parameters that specializes `g`'s `operator()` to be `void(int)`,
-since we defined it as `(auto&&... args)`. For any function pointer it can convert to, all parameter types must be references; for instance, `void(int&&)`.
-It *would* work had we defined `g` as `(auto... args)`, but that means we are passing every argument by value.
+The thing is ... `g` is a *generic* lambda (`operator()` is templated), and the language rules are:
+
+> A generic capture-less lambda has a user-defined conversion function template with **the same invented template parameter list** as operator()
+
+`g`'s `operator()` is basically `operator()(auto&&... args)`,
+and we cannot find a set of template parameters that makes it `void(int)`,
+because all parameter types are references. For instance, `void(int&&)`.
+It *would* work had we defined `g` as `[](auto... args)`, but that means we are passing every argument by value.
 
 In short, lambdas can help us, but only to some extent. Which, for most use cases, will *probably* be enough.
 
