@@ -7,6 +7,7 @@ date: 2024-09-30
 ## Function templates are already **inline**
 
 ***Note**: after this post is published, Jonathan Wakely points out [here](https://www.reddit.com/r/cpp/comments/1fv14b7/comment/lq3t1x4) that **this is wrong**. "(at least with GCC) `inline` keyword is not redundant there, and does affect inlining decisions".*
+*A corrected advice would be: You can omit `inline` for function templates in that they won't cause you compile errors when used in multiple translation units, but they are still not the same as actual `inline` functions.*
 
 This
 
