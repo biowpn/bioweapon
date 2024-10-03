@@ -6,6 +6,8 @@ date: 2024-09-30
 
 ## Function templates are already **inline**
 
+***Note**: after this post is published, Jonathan Wakely points out [here](https://www.reddit.com/r/cpp/comments/1fv14b7/comment/lq3t1x4) that **this is wrong**. "(at least with GCC) `inline` keyword is not redundant there, and does affect inlining decisions".*
+
 This
 
 ```cpp
@@ -22,7 +24,7 @@ T max(T a, T b);
 
 There is no need to slap `inline` onto your function templates. They are already implicitly so.
 
-Note that `static` cannot be omitted:
+On the other hand, the `static` keyword cannot be omitted:
 - Inside a class definition, `static` means "exists independent of any instance"
 - In file scope, `static` means "only visible within the current translation unit"
 
@@ -32,8 +34,6 @@ Also note, for functions and function templates, `constexpr` implies `inline` to
 constexpr inline int foo();
 //        ^^^^^^
 //        This is redundant
-
-constexpr        int foo();
 ```
 
 
@@ -236,9 +236,12 @@ auto fn = static_cast< std::vector<int>(*)(std::string_view) >(from_string);
 auto ints = fn(s);
 ```
 
-On the other hand, with class template approach, `from_string<T>(s)` just works.
+On the other hand, with class template approach, `from_string<std::vector<int>>(s)` just works.
 
-There are other reasons why specializing function templates is considered bad practice. Generally speaking, only specialize function template when there is no other choice.
+There are other reasons why specializing function templates is considered bad practice.
+
+- Function template specialization does not participate in overload resolution. This may lead to surprising behavior.
+- I recommend a read to this article by Herb Sutter: [Why Not Specialize Function Templates?](http://www.gotw.ca/publications/mill17.htm)
 
 Lastly, definitely don't do this:
 
@@ -256,7 +259,7 @@ Use a `friend` function instead:
 ```cpp
 class UserType {
   public:
-    friend void std::swap(UserType& one, UserType& two) noexcept {
+    friend void swap(UserType& one, UserType& two) noexcept {
         // ...
     }
 };
@@ -265,7 +268,7 @@ class UserType {
 
 ## Pass Callables by value or by reference?
 
-Suppose I have a function `g` that takes a callable `f`. Should it accept `f` by value or by reference?
+Suppose I have a function `g` that takes a (templated) callable `f`. Should it accept `f` by value or by reference?
 
 ```cpp
 template <class F>
@@ -292,9 +295,12 @@ const T& max( const T& a, const T& b, Compare comp );
 
 So which way is it?
 
-My current guideline is: if `g` is mainly about the act of calling `f`, then by reference; otherwise (also the default), by value.
+My current guideline is:
 
-- This simplifies the code a bit, and make the callable directly usable with `<algorithm>` functions
+- If `g` is mainly about the act of calling `f`, then by reference;
+- Otherwise (the default), by value.
+
+This simplifies the code a bit, and make the callable directly usable with `<algorithm>` functions.
 
 For callables that are not copyable, or when copying is undesirable, one can use `std::ref` to wrap them:
 
@@ -304,6 +310,9 @@ struct UniqueFunctor {
 
     void operator()(/* ... */) const { /* ... */ }
 } uniq_f;
+
+// Error: UniqueFunctor is not copyable
+std::ranges::for_each(rg, uniq_f);
 
 // Ok: std::reference_wrapper is copyable
 std::ranges::for_each(rg, std::ref(uniq_f));
