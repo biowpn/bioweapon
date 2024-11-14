@@ -176,7 +176,7 @@ int x = 0;
 
 What about *just* `f(x);`? Can this create an (temporary) object?
 
-Yes, if `f` is a class template, and class template argument deduction (CTAD) kicks in:
+~~Yes, if `f` is a class template, and class template argument deduction (CTAD) kicks in:~~
 
 ```cpp
 template <class T>
@@ -184,9 +184,43 @@ struct f {
     f(T);
 };
 
-int x = 0;
-f(x);  // Create a temporary object of type `f<int>` and immediately destroys it
+int main() {
+    int x = 0;
+    f(x);  // (?)
+}
 ```
+
+**Update**: Since this post was published, r/sagittarius_ack [pointed it out](https://www.reddit.com/r/cpp/comments/1gpshyq/comment/lwykjlw) that the above code [doesn't compile](https://godbolt.org/z/oW6rW1fd4), at least on GCC, Clang and MSVC, due to conflicting definition. [It does compile on EDG](https://godbolt.org/z/nx566Kcx5) though - EDG treats the line `(?)` as an expression statement that creates a temporary object and immediately destroys it.
+
+Even more interestingly, consider the following code:
+
+```cpp
+#include <iostream>
+
+template <class T = int>
+struct f {
+    f()  { std::cout << "1"; }
+    f(T) { std::cout << "2"; }
+    ~f() { std::cout << "3"; }
+};
+
+int x = 0;
+
+int main() {
+    f(x);  // (?)
+}
+```
+
+There is implementation divergence:
+
+- [GCC 14.2 accepts it](https://godbolt.org/z/6dM6j7fKM), and prints `13`
+  - This suggests that GCC treats line `(?)` as a (shadowing) declaration, same as `f x;`
+- [Clang 19.1.0 rejects it](https://godbolt.org/z/x9d65MxGx)
+- [MSVC v19.40 rejects it](https://godbolt.org/z/sqrdhzP5v)
+- [EDG 6.6 accepts it](https://godbolt.org/z/qWEo7Eh7x), but prints different output `23`
+  - This suggests that EDG treats line `(?)` as an expression, same as `(f(x));`
+
+I'm not sure what's going on.
 
 
 
