@@ -80,7 +80,7 @@ auto [x, y] = fn();  // ok
 
 The "bind-to" relationship is like references, but it is not an actual reference.
 
-Much like lambdas, `__sb` is a magic variable whose type can't spell, hence `auto` is needed.
+Much like lambdas, `__sb` is a magic variable whose type can't be spelled, hence `auto` is needed.
 
 `something` can be:
 
@@ -156,7 +156,7 @@ I can see myself writing more often:
 
 ```cpp
 auto [it, inserted [[maybe_unused]] ] = map.try_emplace(key, value);
-// future code uses `inserted`, but not currently
+// future or commented out code uses `inserted`
 ```
 
 
@@ -222,15 +222,20 @@ int main() {
 }
 ```
 
-This has bugged me once when I was writing a highly templated library.
-Why doesn't it work? Well, Clang provides a nice explanation:
+This has bugged me once when I was writing a templated library, and the error was buried very deep.
+
+Why doesn't it work? Well, modern Clang provides a nice explanation:
 
 ```
 <source>:3:21: note: reference to 'n' is not a constant expression
 <source>:2:19: note: address of non-static constexpr variable 'n' may differ on each invocation of the enclosing function; add 'static' to give it a constant address
 ```
 
-And the fix would be:
+Currently `constexpr` reference is treated like `constexpr` pointer. It requires constant address,
+which function-scope variables don't have, even if they are `constexpr` - 
+only their *value* is a compile-time constant, not their *location*.
+
+And the fix would be adding `static`:
 
 ```cpp
 int main() {
@@ -248,8 +253,8 @@ Structured binding for tuple-like types (case 2) are sort of like references,
 so this issue would arise for `constexpr` structured bindings as well.
 We care even less for the addresses of binding identifiers, since we can't even access the hidden underlying variable to begin with!
 
-The solution proposed by P2686 is very interesting. It introduced the notion of *Symbolic Addressing*.
-What this means is, for a variable to be *constexpr-referenceable*, it doesn't need to have a constant absolute address;
+The solution proposed by P2686 is very interesting. It introduced the notion of **Symbolic Addressing**.
+What this fancy term means is: for a variable to be *constexpr-referenceable*, it doesn't need to have a constant absolute address;
 its address just needs to be **constant relative to the stack frame**.
 
 Hence, the following will *just work* in C++26:
@@ -269,7 +274,7 @@ It chose the hardest path and solved the problem (and a sister problem) beautifu
 It could have chose a much easier way, for example by making `constexpr` structured binding only work with `static` variables.
 It could still title "`constexpr` structured bindings", just a much nerfed one.
 
-It is just rare to see a paper go beyond "minimum diff" to bringing all out, and, even rarer, get accepted.
+It is just rare to see a paper go beyond "minimum diff" to bringing all out, and even rarer, get accepted.
 
 
 
@@ -279,7 +284,7 @@ It is just rare to see a paper go beyond "minimum diff" to bringing all out, and
 Speaking of heroic papers, here's my favourite one: [P1061 - Structured Bindings can introduce a Pack](https://isocpp.org/files/papers/P1061R10.html).
 
 I've talked about it [before](https://biowpn.github.io/bioweapon/2023/11/11/printing-aggregates.html).
-The [r/cpp](https://www.reddit.com/r/cpp/) community also has a [lot of interests](https://www.reddit.com/r/cpp/search/?q=P1061) in this paper
+The [r/cpp](https://www.reddit.com/r/cpp/) community also has [a lot of interests](https://www.reddit.com/r/cpp/search/?q=P1061) in this paper.
 
 This single feature:
 
@@ -287,7 +292,7 @@ This single feature:
 auto [...xs] = p;
 ```
 
-**opens a new world of possibilities**. Most significantly, it makes turning a struct to a tuple seemlessly:
+**opens a new world of possibilities**. It makes turning a struct to a tuple seemlessly:
 
 ```cpp
 template <class T>
@@ -306,7 +311,7 @@ as illustrated earlier in this article. It's just that structs (or, more accurat
 work out-of-the-box.
 
 By the way, I'm fully aware that P2996 - the big reflection paper exists. I'm just not very confident that it'll make it to C++26.
-With P1061 accepted, a lot of the existing problems can be solved, and I'll gladly take a sure win when I see it.
+With P1061 accepted, a lot of the existing problems can already be solved, and I'll gladly take a win when I see it.
 
 P1061 also aimed high. It attempted to solve a new and very hard problem - introducing packs outside templates:
 
@@ -346,7 +351,7 @@ struct Point {
 int main() {
     Point p{3, 4};
 
-    auto [...cords] = p;  // No can't do
+    auto [...cords] = p;  // No can do
 }
 ```
 
