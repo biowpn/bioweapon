@@ -1,5 +1,5 @@
 ---
-title: "std::non_type_t: What is it, and Why?"
+title: "std::nontype_t: What is it, and Why?"
 date: 2025-01-25
 ---
 
@@ -28,7 +28,7 @@ The [cppreference page about `std::nontype_t`]() says:
 
 > 1) The class template std::nontype_t can be used in the constructor's parameter list to match the intended tag.
 
-... this doesn't tell much. The second point says:
+... that doesn't tell us much. The second point says:
 
 > 2) The corresponding std::nontype instance of (1) is a disambiguation argument tag that can be passed to the constructors of std::function_ref to indicate that the contained object should be constructed with the value of the **non-type template parameter** V.
 
@@ -92,7 +92,7 @@ I think it's for efficiency consideration, in particular **space efficiency**. M
 
 Note that I skipped the other details of `std::function_ref`, things like `thunk_ptr` and `bound_entity`. They are not necessary for understanding `std::nontype_t`.
 
-- On this topic, there is an [excellent article](https://www.foonathan.net/2017/01/function-ref-implementation/) exploring the implementation details and challenges of `function_view` (a then-name for `function_ref`), which I learn a lot from and recommend a read.
+- On this topic, there is an [excellent article](https://www.foonathan.net/2017/01/function-ref-implementation/) exploring the implementation details and challenges of `function_view` (a then-name for `function_ref`), which I learn a lot from.
 
 What I *do* like to expand further is:
 
@@ -108,8 +108,7 @@ Our problem can be summarized as follows:
 - Sometimes the value is known at compile time, sometimes it's not
 - The function wants to do different things depending on that
 
-A classic example is that this would catch more errors at compile time, offering more safety.
-For example, consider:
+This would, for example, catch more errors at compile time, offering more safety. Consider:
 
 ```cpp
 int get_2nd_value(std::array<int, 2> const& arr) {
@@ -131,7 +130,7 @@ int& operator[](int idx) {
 
 This problem is known as the **`constepxr` function parameter problem**. As of C++23, function parameters can never be constant expressions, even for `consteval` functions (I've briefly touched this topic in this [post](https://biowpn.github.io/bioweapon/2024/02/17/constexpr-consteval-function.html) before).
 
-If we were to follow the spirits of `std::function_ref`, we would add an overload that looks like
+If we were to follow the spirits of `std::function_ref`, we would add an overload that looks like:
 
 ```cpp
 template <auto I>
@@ -141,7 +140,7 @@ int& operator[](std::nontype_t<I>) {
 }
 ```
 
-and then users would write
+and then users would write:
 
 ```cpp
 int get_2nd_value(std::array<int, 2> const& arr) {
