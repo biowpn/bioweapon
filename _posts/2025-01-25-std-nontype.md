@@ -80,8 +80,8 @@ function_ref( std::nontype_t<f>, /*cv*/ T* obj ) noexcept;  // (5)
 There is no overload that accepts runtime member function pointers:
 
 ```cpp
-template< auto f, class U >
-function_ref( f, U&& obj ) noexcept;  // Not a thing
+template< class F, class U >
+function_ref( F f, U&& obj ) noexcept;  // Not a thing
 ```
 
 Why can't `function_ref` accept runtime member function pointers?
@@ -165,7 +165,7 @@ void f(int i);            // (1)
 void f(constexpr int i);  // (2)
 ```
 
-`(1)` and `(2)` are considered two different overloads.
+`(1)` and `(2)` are considered two different functions.
 
 Of course, with `constexpr` parameters, the function would need to be turned into function templates. This is because of value-dependent types:
 
@@ -178,7 +178,7 @@ make_char_array(1);  // std::array<char, 1>
 make_char_array(2);  // std::array<char, 2>
 ```
 
-In this example, `make_char_array` returns different types on different values of its parameter. Regular functions can't do that, only function templates can, but with template parameters instead of formal parameters. Today, the above function is written as
+In this example, `make_char_array` returns different types on different values of its parameter. Regular functions can't do that, only function templates can, but with template parameters instead of formal parameters: Today, `make_char_array` is written as
 
 ```cpp
 template <int n>
@@ -223,7 +223,7 @@ void f(Args...);
 The rvalue-lvalue perfect forwarding and `deducing this` went great length solving this problem, so it's expected that constexpr function parameters should have something similar in play. The paper proposed a `maybe_constexpr` specifier, and the accompany `is_constant_value` helper:
 
 ```cpp
-void f(maybe_constexpr int i, maybe_constexpr int j) {
+void f(maybe_constexpr int i) {
     if constexpr (std::is_constant_value(i)) {
         static_assert(i > 0, "i must be positive");
     }
