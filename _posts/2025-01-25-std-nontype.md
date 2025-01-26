@@ -56,8 +56,10 @@ This constructor accepts a function pointer, same as `(3)`. If we want `(3)`, we
 void f();
 
 auto g1 = std::function_ref(f);                // Select (1)
-auto g2 = std::function_ref(std::nontype(f));  // Select (3)
+auto g2 = std::function_ref(std::nontype<f>);  // Select (3)
 ```
+
+- `std::nontype<f>` is the same as `std::nontype_t<f>{}`, but shorter
 
 But then it begs the question: why do we need both `(1)` and `(3)`, since both of which mean to wrap function pointers?
 
@@ -144,7 +146,7 @@ and then users would write:
 
 ```cpp
 int get_2nd_value(std::array<int, 2> const& arr) {
-    return arr[std::nontype(2)];  // Caught the bug! static_assert fires
+    return arr[std::nontype<2>];  // Caught the bug! static_assert fires
 }
 ```
 
