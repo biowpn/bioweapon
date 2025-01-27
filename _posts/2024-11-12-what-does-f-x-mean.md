@@ -6,7 +6,7 @@ date: 2024-11-12
 ## Intro
 
 It is universally agreed that C++ is a complex language. One reason is that its syntax is highly overloaded, meaning that the same code could mean many different things.
-Let's do a simple mental exersice by considering the following code:
+Let's do a simple mental exercise by considering the following code:
 
 ```cpp
 f(x)
@@ -46,8 +46,11 @@ Note that 1 and 2 can both happen in a single call.
 
 ### Indirect Function Call
 
-If `f` is a pointer to function, then `f(x)` is the same as `(*f)(x)`. This is known as "indirect function call".
-The indirection comes from "deferencing" the pointer to function to get the actual function.
+If `f` is a pointer to function, then `f(x)` is the same as `(*f)(x)` - indirect function call.
+The indirection comes from "dereferencing" the pointer to function to get the actual function.
+
+This "shortcut" syntax of indirect function call is inherited from C.
+
 
 ```cpp
 void g(int);
@@ -56,11 +59,11 @@ auto f = &g;  // f has type void (*)(int)
 auto f = g;   // same as above; function decay
 
 int x = 0;
-f(x);     // g(x)
-(*f)(x);  // same as above
+f(x);     // call g(x)
+(*f)(x);  // call g(x)
 ```
 
-This is a very powerful technique, and is one way to get polymorphism.
+This is a very powerful technique. It is one way to get polymorphism.
 
 Similarly, when `f` is a reference to function (yes, functions can have references):
 
@@ -70,7 +73,7 @@ void g(int);
 auto& f = g;  // f has type void (&)(int)
 
 int x = 0;
-f(x);  // g(x)
+f(x);  // call g(x)
 ```
 
 
@@ -116,7 +119,7 @@ f(x);  // g(x)
 
 This is known as "Surrogate Function".
 
-- A *captureless lambda* is also a surrogate function, because it can convert to a function pointer
+- A *capture-less lambda* is also a surrogate function, because it can convert to a function pointer
 
 
 
@@ -257,9 +260,22 @@ In short, despite its look, `f(x)` is *never* a call to the static call operator
 
 
 
+### Constructor Declaration
+
+If `f` is a class type and `x` is a type or type alias, then within the definition of `class f`, `f(x)` declares a constructor:
+
+```cpp
+struct x {};
+class f {
+    f(x);  // single-argument constructor
+};
+```
+
+
+
 ### Function Type
 
-If both `f` and `x` are types, then `f(x)` is a function type - functions that take an `x` and return an `f`.
+If both `f` and `x` are types or type aliases, then `f(x)` is a function type - functions that take an `x` and return an `f`.
 
 ```cpp
 struct f {};
@@ -391,7 +407,7 @@ auto p = f(x);  // No function call happening; it's just a cast
 // Now we can poke around the object's internals like a pro
 ```
 
-C-style casts, of which function-style cast is one form, despite its perceived simplicity and elegancy, are generally adviced *against* using (in fact, all explicit casts are recommended to keep to a minimum). There is actually [a lot of mechanics](https://en.cppreference.com/w/cpp/language/explicit_cast) going on behind the scenes - C-style casts can do a combination of `const_cast`, `static_cast`, `reinterpret_cast` - and is even [an active issue](https://cplusplus.github.io/CWG/issues/2878.html) and evolving as of this writing.
+C-style casts, of which function-style cast is one form, despite its perceived simplicity and elegancy, are generally advised *against* using (in fact, all explicit casts are recommended to keep to a minimum). There is actually [a lot of mechanics](https://en.cppreference.com/w/cpp/language/explicit_cast) going on behind the scenes - C-style casts can do a combination of `const_cast`, `static_cast`, `reinterpret_cast` - and is even [an active issue](https://cplusplus.github.io/CWG/issues/2878.html) and evolving as of this writing.
 
 - I would only use C-style casts for fundamental types - `int`, `double`, and the like. Pointers are excluded.
 
