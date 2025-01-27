@@ -80,7 +80,7 @@ f();                                  // Prints "Non-const"
 
 In fact, there's no way to make the code print "Const".
 
-Well, since `f` makes a copy of `ftor`, it owns a seperate value,
+Well, since `f` makes a copy of `ftor`, it owns a separate value,
 so it makes sense to be able to call the non-const version.
 
 What's surprising is, despite `f` is `const` qualified (and so is its call operator),
@@ -139,7 +139,7 @@ You are right, the biggest selling point of `std::move_only_function` is **not**
 but rather that it fixes the problems of `std::function`:
 
 1. It is const-correct;
-2. No extra check for nullness to raise exception;
+2. No extra check for null-ness to raise exception;
 3. Due to 2, it can be made `noexcept` if you deem so
 
 Being move-only just increases its application space:
@@ -172,8 +172,8 @@ When we see
 - `std::move_only_function`
 - `std::copyable_function`
 
-They are all `function` wrappers, they serve the same goal of wrapping callables, just with different copyablility.
-What if we can add a template parameter to represent the copyablility (or the more general traits), as N4159 similarily suggests:
+They are all `function` wrappers, they serve the same goal of wrapping callables, just with different copyability.
+What if we can add a template parameter to represent the copyability (or the more general traits), as N4159 similarly suggests:
 
 ```cpp
 template <class T, bool Copyable>

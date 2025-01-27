@@ -252,7 +252,7 @@ I find this a bit lacking. Think about it:
 
 In short, the very same values lose their constant-expression-ness at the `consteval` function boundary.
 
-And apparently, I'm not the only one with this thought. See [this Stackoverflow question](https://stackoverflow.com/questions/56130792/will-consteval-functions-allow-template-parameters-dependent-on-function-argumen).
+And apparently, I'm not the only one with this thought. See [this StackOverflow question](https://stackoverflow.com/questions/56130792/will-consteval-functions-allow-template-parameters-dependent-on-function-argumen).
 
 The example provided is:
 
@@ -267,7 +267,7 @@ then `foo` would return different types for different values of `i`.
 Functions can't do that (any function has exactly one return type); only function templates can.
 
 Therefore, some language changes are needed here for this to work.
-Either `foo` is implictly turned into a function template,
+Either `foo` is implicitly turned into a function template,
 or we need something like [P1045 - constexpr Function Parameters](https://wg21.link/p1045r1)
 
 Anyway, what we have right now is:
@@ -350,7 +350,7 @@ int main(int argc, char**) {
 ```
 
 and of course the good kind that are both runtime and compile-time friendly,
-which (fortuanately) all the `constexpr` functions in the standard library are.
+which (fortunately) all the `constexpr` functions in the standard library are.
 
 Perhaps it is a good practice not to write "bad" `constexpr` functions;
 if you mark your functions `constexpr`, make sure it is invocable at both compile-time and runtime.

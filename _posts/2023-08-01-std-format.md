@@ -6,7 +6,7 @@ date: 2023-08-01
 
 ## Intro
 
-With the recent release of GCC 13 and Clang 17, `<format>` is finally avaiable to the most of us.
+With the recent release of GCC 13 and Clang 17, `<format>` is finally available to the most of us.
 I'm using GCC and got some hand-on experience with it.
 
 I've been a long time user of [fmtlib](https://github.com/fmtlib/fmt),
@@ -67,7 +67,7 @@ and compile again.
 
 It still doesn't work. And there are walls of error texts.
 
-Thankfully, as C++ programmers we're already used to dealing with walls of error text. Here was my then throught process:
+Thankfully, as C++ programmers we're already used to dealing with walls of error text. Here was my then thought process:
 
 The direct error is:
 

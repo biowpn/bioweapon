@@ -85,7 +85,7 @@ Some teams tackle this problem by using *code generation*. They define the struc
 
 There are some minor issues with code generation, though.
 
-* First, sometimes the structs are out of your control; for example, dependencies and third party libraries. You need to either manually add them to your schema file - which brings maintainence burden (ensure scheme file matches the actual definitions); or, enhance the code generator to parse C and/or C++ code - which is complicating.
+* First, sometimes the structs are out of your control; for example, dependencies and third party libraries. You need to either manually add them to your schema file - which brings maintenance burden (ensure scheme file matches the actual definitions); or, enhance the code generator to parse C and/or C++ code - which is complicating.
 * Second, it complicates your workflow as it requires extra external tooling. It's fine if the code generator is a Python script; but it could also be some 3rd party library/program which you'll need to introduce dependency for and/or build that first.
 
 Alas, *I just want to print a god damn struct!* I don't want to introduce code generation to my project just because!

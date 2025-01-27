@@ -117,7 +117,7 @@ and they don't just suddenly become valid with `-std=c++23`.
 Effort must be spent to migrate those casts to `std::start_lifetime_as` case by case:
 not every `reinterpret_cast` is meant to start lifetime.
 Also, `start_lifetime_as` needs to be taught (even it's easy to learn).
-The overall cost to the userbase is not small.
+The overall cost to the user base is not small.
 
 Some may question: is using `reinterpret_cast` as it is today even a problem to begin with?
 Compilers have been generating the expected code for decades.

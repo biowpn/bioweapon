@@ -100,7 +100,7 @@ The takeaway is that, the 3rd parameter `T init` serves *two* purposes:
 2. Provide the result type (which is also the return type).
 
 The second pitfall of `accumulate` is that it lives in `<numeric>`, not `<algorithm>`.
-Have you ever got the error `'accumulate' is not a memeber of 'std'`?
+Have you ever got the error `'accumulate' is not a member of 'std'`?
 
 Anyhow, despite its gotchas, `accumulate` has been super useful and popular,
 largely thanks to its second and more generalized form:
@@ -300,7 +300,7 @@ std::ranges::fold_left(nums, 0, std::plus<>{});          // Ok, result type is d
 1. *`std::plus` is a class template, `std::plus<>` (which is `std::plus<void>`) is a concrete class,
 and `std::plus<>{}` is an object. Function arguments can only be values.*
 2. *`std::plus<void>` is special, its call operator is generic - takes any two types. It's a "Transparent Operator Functor"*
-3. *If I had a magic wand, I would go back to 1998 and make `std::plus` and friends just such functors*
+3. *If I had a magic wand, I would go back to 1998 and make `std::plus` and friends just such functor*
 
 
 For `fold_left`, the binary operation is not defaulted,
@@ -314,7 +314,7 @@ double sum_fold_left(std::span<double> nums) {
 }
 ```
 
-It *bascially* compiles to the same assembly as `accumulate`,
+It *basically* compiles to the same assembly as `accumulate`,
 with the make-it-even trick present. It's just `fold_left` [makes one more comparison](https://godbolt.org/z/aofq4Krf1)
 before going to the happy even case. I'm not sure why.
 

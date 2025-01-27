@@ -113,7 +113,7 @@ it is recommended to provide a factory function to fill the role of `make_unique
 ### File Descriptor
 
 For some resource, there isn't even a pointer to begin with.
-An example would be the UNIX file fescriptor, which is just an `int`.
+An example would be the UNIX file descriptor, which is just an `int`.
 Can we still use `unique_ptr` for it?
 
 The answer is **yes**. It turns out that `unique_ptr<T, D>::pointer` doesn't need to be an actual pointer;
@@ -130,7 +130,7 @@ int i = nullptr;  // ill-formed, for good reasons
 ```
 
 And even if it could, say initialized to 0 as `int i = NULL;` does,
-we probably don't want this behavior: `0` is a valid file descriptor, and UNIX uses `-1` as the sentinel value for invalidness/nullness.
+we probably don't want this behavior: `0` is a valid file descriptor, and UNIX uses `-1` as the sentinel value for invalidness/null-ness.
 
 Therefore, we must first roll up a wrapper type:
 

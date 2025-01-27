@@ -161,7 +161,7 @@ auto f = [&](int num) { return bar.foo(num); };
 ```
 
 But then, that sort of defeats the purpose of `std::bind_front` - replacing ad-hoc lambdas for use cases as such.
-Because outside from contrieved examples, real world partial functions have to deal with arguments perfect forwarding,
+Because outside from contrived examples, real world partial functions have to deal with arguments perfect forwarding,
 return value perfect forwarding, `noexcept`-ness preservation, etc. We'll see an example later.
 
 
@@ -245,7 +245,7 @@ auto g = f;  // Proposed ok
 We can somewhat emulate the paper today with a macro, `OVERLOAD`, which is just a shortcut for creating an ad-hoc lambda:
 
 ```cpp
-// noexcept-ness preversation not handled
+// noexcept-ness preservation not handled
 #define OVERLOAD(fun)                                                          \
     [](auto&&... args) -> decltype(auto) {                                     \
         return fun(std::forward<decltype(args)>(args)...);                     \

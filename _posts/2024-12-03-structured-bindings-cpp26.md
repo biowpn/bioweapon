@@ -292,7 +292,7 @@ This single feature:
 auto [...xs] = p;
 ```
 
-**opens a new world of possibilities**. It makes turning a struct to a tuple seemlessly:
+**opens a new world of possibilities**. It makes turning a struct to a tuple seamlessly:
 
 ```cpp
 template <class T>
@@ -378,7 +378,7 @@ Of course, I would rather have the full thing, and I hope to see it in the futur
 
 
 
-## Summmary
+## Summary
 
 Structured binding receives a lot of powerful upgrades in C++26. With reflection on the way,
 C++26 is going to be very exciting*.

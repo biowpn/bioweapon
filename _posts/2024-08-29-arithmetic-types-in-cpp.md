@@ -81,7 +81,7 @@ I cannot provide a better answer than
 
 
 
-## Signedness Modifiers
+## Signed-ness Modifiers
 
 All C++ integers are either `signed` or `unsigned`.
 
@@ -96,7 +96,7 @@ Further, integer arithmetic is different between `signed` and `unsigned`:
   - In fact, I've encountered bugs that could have been avoided were `signed` type used
   - Both `signed` and `unsigned` are useful in different use cases
 
-If we don't specify the signedness, it defaults to `signed`. That is:
+If we don't specify the signed-ness, it defaults to `signed`. That is:
 
 - `int` is the same as `signed int`
 - `long` is the same as `signed long`
@@ -158,7 +158,7 @@ If precise width is demanded, there are **fixed width integer types** at our dis
 - `uint8_t`: exactly 8-bit unsigned integer
 - ... and so on, up to `int64_t` and `uint64_t`
 
-Aside from width precision, these types are more coherant when it comes to naming/spelling. You don't need to worry about `long` or `short` or `char` or the order thereof.
+Aside from width precision, these types are more coherent when it comes to naming/spelling. You don't need to worry about `long` or `short` or `char` or the order thereof.
 
 - `long signed long` is legal
 
@@ -226,11 +226,11 @@ C++ requires converting `T` and `U` to a common type before carrying out the ope
   - `char @ char` => `int @ int`
   - `unsigned short @ unsigned short` => `int @ int`
 
-3. For two integer types with the same signedness, the one with higher rank is the common type
+3. For two integer types with the same signed-ness, the one with higher rank is the common type
   - `int @ long` => `long @ long`
   - `unsigned int @ unsigned long` => `unsigned long @ unsigned long`
 
-Now, when it comes to **mixed signedness operation**, such as `unsigned int @ long`, the recommendation is:
+Now, when it comes to **mixed signed-ness operation**, such as `unsigned int @ long`, the recommendation is:
 
 - **Don't**.
 
@@ -244,7 +244,7 @@ Since C++20, we even introduce [integer comparison functions](https://en.cpprefe
 - `cmp_greater(T, U)`
 - ...
 
-*Precisely* because the builtin mixed-signedness operations are error-prone.
+*Precisely* because the builtin mixed-signed-ness operations are error-prone.
 
 
 

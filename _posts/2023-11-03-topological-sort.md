@@ -26,7 +26,7 @@ From the looks of it, we can supply our vertices as `[first, last)`, and hack ar
 
 - `comp(i, j)` returns true if and only if there is an edge from `i` to `j`
 
-Better yet, the postcondition of `std::sort` is (paraphrasing [the sort documentation](https://en.cppreference.com/w/cpp/algorithm/sort)):
+Better yet, the post-condition of `std::sort` is (paraphrasing [the sort documentation](https://en.cppreference.com/w/cpp/algorithm/sort)):
 
 > `comp(j, i) == false` for **every** pair of element `i` and `j` where `i` is before `j` in the sequence.
 
@@ -180,7 +180,7 @@ void topological_sort(I first, S last, F edge);
 ```
 
 The naive way is to do a modified insertion sort:
-In each iteration, we find a source - vertice without any incoming edge,
+In each iteration, we find a source - vertices without any incoming edge,
 then we put it at the front.
 
 ```cpp

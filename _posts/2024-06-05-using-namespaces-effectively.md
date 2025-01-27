@@ -11,7 +11,7 @@ there is only one thing I'd like to get out right away:
 
 - **Avoid `using namespace`**
 
-Ok, that's too extreme and delibrately ambiguous.
+Ok, that's too extreme and deliberately ambiguous.
 More practical suggestions would be:
 
 - **Keep `using namespace` as local as possible**
@@ -221,11 +221,11 @@ int main() {
 }
 ```
 
-My takeway is: C++ is hard.
+My takeaway is: C++ is hard.
 
 ...
 
-Ok, the real takeway is, Herb's advice again:
+Ok, the real takeaway is, Herb's advice again:
 
 > If you put a class into a namespace, be sure to put all helper functions and operators into the same namespace too
 
@@ -277,7 +277,7 @@ namespace library_name::module_name_1 {
 
 You get the idea: each layer of directory introduces a layer of namespace with the same name.
 
-Other source files, including unittests, can be organized similarily:
+Other source files, including unittest, can be organized similarly:
 
 ```
 src/
@@ -296,7 +296,7 @@ to be separated from public headers.
 # inline namespaces
 
 Namespaces can provide multi-versioning *within* a library.
-This is useful when multiple verions of the same entities need to co-exist in the same codebase.
+This is useful when multiple versions of the same entities need to co-exist in the same codebase.
 
 For example:
 

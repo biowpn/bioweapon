@@ -130,7 +130,7 @@ int& operator[](int idx) {
 }
 ```
 
-This problem is known as the **`constepxr` function parameter problem**. As of C++23, function parameters can never be constant expressions, even for `consteval` functions (I've briefly touched this topic in this [post](https://biowpn.github.io/bioweapon/2024/02/17/constexpr-consteval-function.html) before).
+This problem is known as the **`constexpr` function parameter problem**. As of C++23, function parameters can never be constant expressions, even for `consteval` functions (I've briefly touched this topic in this [post](https://biowpn.github.io/bioweapon/2024/02/17/constexpr-consteval-function.html) before).
 
 If we were to follow the spirits of `std::function_ref`, we would add an overload that looks like:
 

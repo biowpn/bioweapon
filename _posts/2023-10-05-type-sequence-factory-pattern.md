@@ -38,7 +38,7 @@ This is a common pattern. Let's explore some ways to implement `make_dinosaur`.
 
 ## The I-Need-to-Go-Home-in-10-Minute Solution
 
-The most straightfoward way is chaining `if`s:
+The most straightforward way is chaining `if`s:
 
 ```cpp
 std::unique_ptr<Dinosaur> make_dinosaur(std::string_view name) {
@@ -151,7 +151,7 @@ I first bumped into this construct in [Andrei Alexandrescu's CppCon talk](https:
 With it, we can define our list of types as follows:
 
 ```cpp
-using dinasour_types = type_sequence<
+using dinosaur_types = type_sequence<
     Diplodocus,
     Stegosaurus,
     Tyrannosaurus
@@ -169,7 +169,7 @@ std::unique_ptr<Dinosaur> make_dinosaur_from(type_sequence<Ts...>, std::string_v
 }
 
 std::unique_ptr<Dinosaur> make_dinosaur(std::string_view name) {
-    return make_dinosaur_from(dinasour_types{}, name);
+    return make_dinosaur_from(dinosaur_types{}, name);
 }
 ```
 
@@ -180,10 +180,10 @@ You may wonder. Is it really worth the trouble? All the template code seems unne
 
 The answer is: **it scales better**.
 
-Adding a new type to the factory function is as simple as adding it to the `dinasour_types`:
+Adding a new type to the factory function is as simple as adding it to the `dinosaur_types`:
 
 ```cpp
-using dinasour_types = type_sequence<
+using dinosaur_types = type_sequence<
     Diplodocus,
     Stegosaurus,
     Tyrannosaurus,
@@ -229,14 +229,14 @@ std::unique_ptr<Dinosaur> make_dinosaur_from(type_sequence<Ts...>, std::string_v
 }
 
 std::unique_ptr<Dinosaur> make_dinosaur(std::string_view name) {
-    return make_dinosaur_from(dinasour_types{}, name);
+    return make_dinosaur_from(dinosaur_types{}, name);
 }
 ```
 
 
 ## Afterword
 
-We have essentially splitted a function into several smaller ones, each doing a specific job:
+We have essentially split a function into several smaller ones, each doing a specific job:
 
 - `make_unique_dino`: actually making the object, knowing the type
 - `make_dinosaur_from`: search for the concrete type
