@@ -200,7 +200,7 @@ template <class Integer, std::intmax_t Num, std::intmax_t Den>
 constexpr Integer ilerp(Integer a, Integer b, std::ratio<Num, Den>) noexcept {
     ... // checks omitted
 
-    using U = std::make_unsigned_t<Integer>;
+    using U = std::uintmax_t;  // Might as well, since Num and Den are already intmax_t
 
     int sign = 1;
     U m = a;
@@ -360,10 +360,14 @@ template <unsigned_integer T>
 constexpr inline auto half_bits = bits<T> / 2;
 
 template <unsigned_integer T>
-constexpr T high(T x) { return x >> half_bits<T>; }
+constexpr T high(T x) {
+    return x >> half_bits<T>;
+}
 
 template <unsigned_integer T>
-constexpr T low(T x) { return x << half_bits<T> >> half_bits<T>; }
+constexpr T low(T x) {
+    return x << half_bits<T> >> half_bits<T>;
+}
 
 
 // The generic big-integer multiplication.
@@ -373,8 +377,8 @@ constexpr big_int<T> big_mul(T a, T b) {
     T s = high(a) * low(b) + high(t);
     T r = low(a) * high(b) + low(s);
     return {
-        .lo = (r << half_bits<T>) + low(t),
-        .hi = high(a) * high(b) + high(s) + high(r),
+        .lo = T(low(t) + (r << half_bits<T>)),
+        .hi = T(high(a) * high(b) + high(s) + high(r)),
     };
 }
 ```
@@ -423,10 +427,10 @@ constexpr void set_ith_bit(big_int<T>& n, int i, bool v) {
 }
 
 template <unsigned_integer T>
-constexpr auto left_shift(big_int<T> n, int x) {
+constexpr big_int<T> left_shift(big_int<T> n, int x) {
     return big_int<T>{
-        n.lo << T(x),
-        (n.hi << T(x)) | (n.lo >> T(bits<T> - x)),
+        T(n.lo << T(x)),
+        T((n.hi << T(x)) | (n.lo >> T(bits<T> - x))),
     };
 }
 ```
@@ -434,13 +438,14 @@ constexpr auto left_shift(big_int<T> n, int x) {
 We also need big integer subtraction:
 
 ```cpp
+// The generic big-integer subtraction.
 template <unsigned_integer T>
-constexpr big_int<T> big_sub(big_int<T> n, T d) {
+constexpr auto big_sub(big_int<T> n, T d) -> big_int<T> {
     if (n.lo >= d) {
-        return {n.lo - d, n.hi};
+        return {T(n.lo - d), T(n.hi)};
     } else {
         T borrow = d - n.lo;
-        return {std::numeric_limits<T>::max() - borrow + 1, n.hi - 1};
+        return {T(std::numeric_limits<T>::max() - borrow + 1), T(n.hi - 1)};
     }
 }
 ```
@@ -448,6 +453,7 @@ constexpr big_int<T> big_sub(big_int<T> n, T d) {
 And finally, here is the long-division-based `big_div`:
 
 ```cpp
+// The generic big-integer division.
 // Based on: https://en.wikipedia.org/wiki/Division_algorithm#Integer_division_(unsigned)_with_remainder
 template <unsigned_integer T>
 constexpr T big_div(big_int<T> n, T d) {
@@ -487,10 +493,12 @@ With our `big_mul` and `big_div` crafted, our `ilerp` is now complete:
 template <class Integer, std::intmax_t Num, std::intmax_t Den>
 constexpr Integer ilerp(Integer a, Integer b, std::ratio<Num, Den>) noexcept {
     using ratio = typename std::ratio<Num, Den>::type;
-    static_assert(std::ratio_greater_equal_v<ratio, std::ratio<0, 1>>, "pos is less than 0");
-    static_assert(std::ratio_less_equal_v<ratio, std::ratio<1, 1>>, "pos is greater than 1");
+    static_assert(std::ratio_greater_equal_v<ratio, std::ratio<0, 1>>,
+                  "pos is less than 0");
+    static_assert(std::ratio_less_equal_v<ratio, std::ratio<1, 1>>,
+                  "pos is greater than 1");
 
-    using U = std::make_unsigned_t<Integer>;
+    using U = std::uintmax_t;
 
     int sign = 1;
     U m = a;
@@ -503,10 +511,12 @@ constexpr Integer ilerp(Integer a, Integer b, std::ratio<Num, Den>) noexcept {
 
     U d = M - m;
 
-    std::uintmax_t num = Num;
-    std::uintmax_t den = Den;
+    U num = Num;
+    U den = Den;
     return a + sign * Integer(big_div(big_mul(d, num), den));
 }
 ```
+
+The working program can be found [here](https://github.com/biowpn/bioweapon/blob/main/codes/ilerp.cpp).
 
 There you go, a fully portable `ilerp`.
