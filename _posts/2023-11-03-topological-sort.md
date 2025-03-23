@@ -7,6 +7,19 @@ date: 2023-11-03
 
 [Topological sorting](https://en.wikipedia.org/wiki/Topological_sorting) comes up often in applications such as task schedulers, dependency resolvers, and node-based computation engines. Let's try to design and implement generic topological sorting in C++.
 
+Specifically, we want to implement `topological_sort` with the following signature:
+
+```cpp
+template< class RandomIt, class F >
+void topological_sort( RandomIt first, RandomIt last, F edge );
+```
+
+- `[first, last)` denotes a list of vertices.
+- `edge` is a callable such that:
+  - If there is an edge from `u` to `v`, then `edge(u, v)` returns `true`
+  - Otherwise, `edge(u, v)` returns `false`
+
+
 
 ## Can we reuse `std::sort`?
 
@@ -22,26 +35,14 @@ template< class RandomIt, class Compare >
 void sort( RandomIt first, RandomIt last, Compare comp );
 ```
 
-From the looks of it, we can supply our vertices as `[first, last)`, and hack around `comp` so that it provides information on the edges. In fact, intuitively, we can define `comp` as:
+And what is `comp`? `comp(x, y)` returns `true` if and only if `x` is "less than" `y`. This seems to match our `edge` comparator exactly:
 
-- `comp(i, j)` returns true if and only if there is an edge from `i` to `j`
-
-Better yet, the post-condition of `std::sort` is (paraphrasing [the sort documentation](https://en.cppreference.com/w/cpp/algorithm/sort)):
-
-> `comp(j, i) == false` for **every** pair of element `i` and `j` where `i` is before `j` in the sequence.
-
-In other words, if there is an edge from `i` to `j` (`comp(i, j) == true`), then `i` must be before `j` in the sequence.
-
-And if we compare it to the definition of [topological ordering](https://en.wikipedia.org/wiki/Topological_sorting):
-
-> ... is a linear ordering ... such that for every directed edge *uv* from vertex *u* to vertex *v*, *u* comes before *v* in the ordering.
-
-It's a perfect match!
+- A Vertex `u` is "less than" `v` if there is an edge from `u` to `v`
+- For example, if the vertices represent tasks, when it means `u` must be completed before `v`
 
 So, can we simply
 
 ```cpp
-/// `edge(u, v)` returns true if and only if there is an edge from `u` to `v`
 template< class RandomIt, class F >
 void topological_sort( RandomIt first, RandomIt last, F edge ) {
     std::sort(first, last, edge);
@@ -126,9 +127,10 @@ DBAC --> CDAB
 So what's going here?
 
 
+
 ## Preconditions of `std::sort`
 
-As a rule of thumb x2, if a standard library algorithm, especially a long-lived and well-tested one like `std::sort`, produces unexpected results, it's most likely our fault of providing bad inputs - inputs that violate the preconditions.
+As another rule of thumb, if a standard library algorithm, especially a long-lived and well-tested one like `std::sort`, produces unexpected results, it's most likely our fault of providing bad inputs - inputs that violate the preconditions.
 
 But in our cases:
 - We provided a random-access sequence
@@ -151,15 +153,17 @@ What are the requirements of *Compare*? In the [documentation of Compare](https:
 
 So that must be it, right? We just need to change `edge` to `path` and it'll work?
 
+- `path(u, v)` returns true if and only iff there is a path from `u` to `v` (which contains one or more edges)
+
 Hold on a second. There's another section on `equiv(a, b)`, which is defined as `!comp(a, b) && !comp(b, a)` (`a` and `b` are considered *equal* if neither precedes the other), as follows:
 
 > Establishes *equivalence relationship* with the following properties:
 ...
 4. If `equiv(a, b) == true` and `equiv(b, c) == true`, then `equiv(a, c) == true`
 
-4 is where the real trouble is.
+**This (equivalence relationship) is where the real trouble is**.
 
-In our example, `equiv(B, C) == true` and `equiv(B, D) == true`, therefore `std::sort` goes ahead and assumes `equiv(C, D) == true`, which is incorrect. Therefore, even if we replace `edge` with `path`, 4 is still violated.
+In our example, `equiv(B, C) == true` and `equiv(B, D) == true`, therefore `std::sort` goes ahead and assumes `equiv(C, D) == true`, which is incorrect, because `C` is in fact less than `D` since there is an edge from `C` to `D`. Therefore, even if we replace `edge` with `path`, 4 (equivalence relationship) is still violated.
 
 But why is this such a big deal? Why can't it "just work"?
 
@@ -170,23 +174,19 @@ As you may already know it, `std::is_sorted` only checks the adjacent pairs. All
 In general, any algorithm that requires *Compare* (read: *strict weak ordering*), including `std::sort`, cannot be used to implement topological sorting because the vertices of a directed acyclic graph do not form a strict weak ordering.
 
 
+
 ## What do we do instead?
 
-Let's implement topological sort from scratch, with `std::sort`-like API:
-
-```cpp
-template <std::random_access_iterator I, class S, class F>
-void topological_sort(I first, S last, F edge);
-```
+We may implement topological sort from scratch.
 
 The naive way is to do a modified insertion sort:
-In each iteration, we find a source - vertices without any incoming edge,
+In each iteration, we find a source - a vertex without any incoming edge,
 then we put it at the front.
 
 ```cpp
 /// topological sort, the brute force
-template <std::random_access_iterator I, class S, class F>
-void topological_sort(I first, S last, F edge) {
+template< class RandomIt, class F >
+void topological_sort( RandomIt first, RandomIt last, F edge ) {
     for (; first != last; ++first) {
         // check if *first is a source.
         for (auto other = std::next(first); other != last; ++other) {
@@ -204,7 +204,7 @@ void topological_sort(I first, S last, F edge) {
 This is short and concise, requires constant extra memory, but what about the time complexity?
 
 Note that due to the important `other = first` inside the nested loop,
-this brute force solution could be `O(|V|^3)`, where `|V|` is the number of vertices.
+this solution is `O(|V|^3)` in time, where `|V|` is the number of vertices.
 
 Alternatively, we could use Kahn's algorithm. The rough idea is:
 
@@ -216,8 +216,8 @@ Alternatively, we could use Kahn's algorithm. The rough idea is:
 
 ```cpp
 /// topological sort, Kahn's algorithm
-template <std::random_access_iterator I, class S, class F>
-void topological_sort(I first, S last, F edge) {
+template< class RandomIt, class F >
+void topological_sort( RandomIt first, RandomIt last, F edge ) {
     std::size_t n = std::ranges::distance(first, last);
     std::vector<std::size_t> in_degree(n);
 
@@ -251,23 +251,24 @@ void topological_sort(I first, S last, F edge) {
 }
 ```
 
-Kahn's algorithm runs in `O(|V| + |E|)`, where `|E|` is the number of edges.
+Kahn's algorithm runs in `O(|V| + |E|)` time, where `|E|` is the number of edges.
 For a dense graph, `|E| ~ |V|^2`, therefore our algorithm runs in `O(|V|^2)`.
+
 
 
 ## Afterword
 
-We showed that why `std::[ranges::]sort` cannot be used for topological sorting,
+We showed that why `std::sort` cannot be used for topological sorting,
 and then implemented topological sorting under a similar API.
 
 Perhaps, a few more finite graph algorithms can be implemented in this flavor:
 
 ```cpp
-template <std::random_access_iterator I, class S, class F>
-I find_cycle(I first, S last, F edge);
+template <class RandomIt, class F>
+RandomIt find_cycle(RandomIt first, RandomIt last, F edge);
 
-template <std::random_access_iterator I, class S, class F, class V>
-void depth_first_search(I first, S last, F edge, V visitor);
+template <class RandomIt, class F, class V>
+void depth_first_search(RandomIt first, RandomIt last, F edge, V visitor);
 
 ...
 ```
