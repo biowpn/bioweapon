@@ -64,7 +64,7 @@ This is definitely more involved than `(a + b) / 2`. Essentially, it is a refine
 
 
 
-## A `lerp` for integers
+## A lerp for Integers
 
 Can we generalize `midpoint` further? How about the quantile? Or an arbitrary k-th percentile?
 
@@ -479,7 +479,7 @@ And, of course, we can always "cheat" by using implementation-defined extended i
 
 
 
-## Put Everything Together
+## Putting Everything Together
 
 With our `big_mul` and `big_div` crafted, our `ilerp` is now complete:
 
