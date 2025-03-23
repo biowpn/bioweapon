@@ -135,13 +135,13 @@ One option is to throw our hands up and borrows power from UB:
 
 This gives maximal implementation freedom, at the cost of, well, more UBs! The nice thing about `midpoint(a, b)` is that is well-defined for all `(a, b)`. Can our `ilerp` do better and follow suits? In other words, we need to decide what to do on invalid input.
 
-We could throw exceptions. However, exceptions are always desired. Besides, both `midpoint` (integral) and `lerp` are `noexcept`. We want to make our `ilerp` also `noexcept`.
+We could throw exceptions. However, exceptions are not always desired. Besides, both `midpoint` (integral) and `lerp` are `noexcept`. We want to make our `ilerp` also `noexcept`.
 
-We could return a special value, such as `0` like `atoi` does. However, it has been long established that this is a bad practice; `0` is a possible valid output, and there is no way to check for errors without adding even more complexity (e.g. `errno`).
+We could return a special value, such as `0`, to indicate errors, like `atoi` does. However, it has been long established that this is a bad practice; `0` is a possible valid output, and there is no way to check for errors without adding even more complexity via some separate channels like `errno`.
 
 We could modify the return type to be `optional<Integer>`, or, even better, `expected<Integer, E>`, so that the caller can check for errors. The minor downside is the burden is now shifted to the caller, and the code is not as clean. In some use cases, the caller knows the position is definitely valid - such as `ilerp(a, b, 1, 4)` - but now it needs to write `*ilerp(a, b, 1, 4)`.
 
-There is another way. What if we can validate `po` at compile time? Why, we have exactly the construct we need - [std::ratio](https://en.cppreference.com/w/cpp/numeric/ratio/ratio), a compile-time rational number:
+There is another way. What if we can validate `pos` at compile time? Why, we have exactly the construct we need - [std::ratio](https://en.cppreference.com/w/cpp/numeric/ratio/ratio), a compile-time rational number:
 
 ```cpp
 template <class Integer, std::intmax_t Num, std::intmax_t Den>
