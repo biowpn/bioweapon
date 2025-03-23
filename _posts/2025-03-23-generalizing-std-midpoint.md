@@ -505,7 +505,7 @@ constexpr Integer ilerp(Integer a, Integer b, std::ratio<Num, Den>) noexcept {
 
     std::uintmax_t num = Num;
     std::uintmax_t den = Den;
-    return a + sign * big_div(big_mul(d, num), den);
+    return a + sign * Integer(big_div(big_mul(d, num), den));
 }
 ```
 
