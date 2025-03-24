@@ -55,13 +55,14 @@ constexpr Integer midpoint(Integer a, Integer b) noexcept {
 
 This is definitely more involved than `(a + b) / 2`. Essentially, it is a refined form of `a + (b - a) / 2`:
 
-1. `a` and `b` are casted to the unsigned type
-2. `m` and `M` are the smaller and bigger of `a` and `b` respectively
-3. Compute `(M - m)`. Since `m <= M`, no overflow/wrap-around occurs, and the result is the distance between `a` and `b`
-4. Apply additional `U` cast to `(M - m)` to account for integral promotion (`unsigned short - unsigned short -> signed int`)
-5. The distance is halved, and now it is within the representable range of **signed** type
-6. Add this halved distance to `a`, adjusted by sign
+1. Compute `(M - m)`, which is the distance between `a` and `b`
+    - If `a` and `b` are unsigned, this result is naturally correct
+    - If `a` and `b` are signed, casting a negative value to unsigned is the same as adding `2^N` to it, and since unsigned has modulo-2 arithmetic, the result will also be correct
+2. Apply additional `U` cast to `(M - m)` to account for integral promotion (`(unsigned short - unsigned short) -> signed int`)
+3. The distance is halved, and now it is within the representable range of possibly **signed** type `Integer`
+4. Add this halved distance to `a`, adjusted by sign
 
+The implementation makes clever use of unsigned arithmetic, while handling integral promotion carefully.
 
 
 ## A lerp for Integers
@@ -73,7 +74,7 @@ Why, there is already [`std::lerp`](https://en.cppreference.com/w/cpp/numeric/le
 - `lerp(a, b, t)` returns `a + t * (b - a)`
 
 The thing is, `lerp` converts all arguments to floating points and does math in floating point arithmetics.
-Conversion between floating points and integers can be lossy:
+Conversion between floating points and integers can be lossy since not all integers can be represented by floating points precisely:
 
 ```cpp
 std::int64_t a = INT64_MAX - 2;
@@ -92,9 +93,14 @@ Output:
 -9223372036854775808
 ```
 
-Can we write a `lerp` for integers, `ilerp`, with the constraint that `t` must be between 0 and 1 (interpolation only)?
+We can see that the `lerp`-based midpoint gives the wrong answer.
+
+Can we write a `lerp` for integers, `ilerp`, so that it always gives the correct result?
+
+Further, we add the constraint that `t` must be between 0 and 1 (interpolation only).
 
 - This way, the result is always representable, and our function accepts all possible input values, just like `midpoint`
+- That is not to say extrapolation is not useful (it is indeed quite useful)
 
 
 
@@ -102,7 +108,7 @@ Can we write a `lerp` for integers, `ilerp`, with the constraint that `t` must b
 
 What should our `ilerp` look like?
 
-The straightforward way is the add a third parameter, `pos`, to indicate the desired position, as `lerp` does:
+The straightforward way is copy what `lerp` does - using a third parameter `pos` to indicate the "position" of the output between `a` and `b`:
 
 ```cpp
 template <class Integer>
@@ -121,27 +127,23 @@ constexpr Integer ilerp(Integer a, Integer b, Integer pos_num, Integer pos_den) 
 /// The indicated position is pos_num / pos_den
 ```
 
-This can work. The next question is, what happens if the indicated position (`pos_num / pos_den`) is not between `0` and `1`?
+This can work. The next question is, how do we handle invalid input? What happens if the indicated position (`pos_num / pos_den`) is not between `0` and `1`? What happens if `pos_den == 0`?
 
-As mentioned earlier, when the result is not between `a` and `b`, it may not be representable of `Integer`, and overflow may follow. Hence we limit the function to interpolation only.
-
-- That is not to say extrapolation is not useful (it is indeed quite useful).
-
-Besides, there is also the case of `pos_den == 0`. What do we do then?
-
-One option is to throw our hands up and borrows power from UB:
+One option is to throw our hands up and draw power from UB:
 
 - If the position is not between `0` and `1`, or if `pos_den == 0`, **the behavior is undefined**
 
-This gives maximal implementation freedom, at the cost of, well, more UBs! The nice thing about `midpoint(a, b)` is that is well-defined for all `(a, b)`. Can our `ilerp` do better and follow suits? In other words, we need to decide what to do on invalid input.
+This gives maximal implementation freedom, at the cost of, well, more UBs! The nice thing about `midpoint(a, b)` is that is well-defined for **all** `(a, b)`. Can our `ilerp` follow suits?
 
-We could throw exceptions. However, exceptions are not always desired. Besides, both `midpoint` (integral) and `lerp` are `noexcept`. We want to make our `ilerp` also `noexcept`.
+We could throw exceptions on invalid input. However, exceptions are not always desired. Besides, both `midpoint` (integral) and `lerp` are `noexcept`. We want to make our `ilerp` also `noexcept`.
 
-We could return a special value, such as `0`, to indicate errors, like `atoi` does. However, it has been long established that this is a bad practice; `0` is a possible valid output, and there is no way to check for errors without adding even more complexity via some separate channels like `errno`.
+We could return a special value, such as `0`, to indicate errors, like `atoi` does. However, it has been long established that this is a bad practice; `0` is a possible valid output, and there is no way to check for errors without adding even more complexity such as some separate channels like `errno`.
 
-We could modify the return type to be `optional<Integer>`, or, even better, `expected<Integer, E>`, so that the caller can check for errors. The minor downside is the burden is now shifted to the caller, and the code is not as clean. In some use cases, the caller knows the position is definitely valid - such as `ilerp(a, b, 1, 4)` - but now it needs to write `*ilerp(a, b, 1, 4)`.
+We could modify the return type to be `optional<Integer>`, or, even better, `expected<Integer, E>`, so that the caller can check for errors. The minor downside is the burden is now shifted to the caller, and the code is not as clean. In some use cases, the caller knows the position is definitely valid - such as `ilerp(a, b, 1, 4)` - but now we need to write `*ilerp(a, b, 1, 4)`.
 
-There is another way. What if we can validate `pos` at compile time? Why, we have exactly the construct we need - [std::ratio](https://en.cppreference.com/w/cpp/numeric/ratio/ratio), a compile-time rational number:
+There is another way. What if we can make `pos` a compile time constant so we can validate it at compile time? This way, on invalid `pos`, the program fails to compile.
+
+Why, we have exactly the construct we need - [std::ratio](https://en.cppreference.com/w/cpp/numeric/ratio/ratio), a compile-time rational number:
 
 ```cpp
 template <class Integer, std::intmax_t Num, std::intmax_t Den>
@@ -160,21 +162,11 @@ The only downside is, of course, we can't supply runtime positions, which makes 
 
 Regardless of runtime or compile-time position, the implementation strategy is similar, which we shall see soon.
 
-Finally, we need a precise definition for the result of `ilerp`.
-
-Treating all numbers as mathematical numbers, the result of `ilerp(a, b, num / den)` is:
-
-```
-a + (b - a) * num / den
-```
-
-Rounded towards `a`.
 
 
+## Let's Implement It
 
-## Let's Do It
-
-The naive way is just to copy paste the definition:
+The naive way is just to copy paste the lerp formula:
 
 ```cpp
 template <class Integer, std::intmax_t Num, std::intmax_t Den>
@@ -192,15 +184,14 @@ Obviously this runs into overflow problems, specifically in two places:
 
 Nonetheless, it gives us a starting point.
 
-We can borrow a page from `midpoint` to solve (1). That is, we cast `a` and `b` to unsigned type,
-and sort out the smaller and bigger of them:
+We can borrow a page from `midpoint` to solve (1), computing the distance between `a` and `b`:
 
 ```cpp
 template <class Integer, std::intmax_t Num, std::intmax_t Den>
 constexpr Integer ilerp(Integer a, Integer b, std::ratio<Num, Den>) noexcept {
     ... // checks omitted
 
-    using U = std::uintmax_t;  // Might as well, since Num and Den are already intmax_t
+    using U = std::make_unsigned_t<Integer>;
 
     int sign = 1;
     U m = a;
@@ -217,7 +208,7 @@ constexpr Integer ilerp(Integer a, Integer b, std::ratio<Num, Den>) noexcept {
 }
 ```
 
-Now, about the last part, can we also copy what `midpoint` does? That is:
+Now, about the last part, can we just plug the definition in:
 
 ```cpp
     return a + sign * Integer(d * Num / Den);
@@ -241,20 +232,27 @@ So, the result is sometimes signed, sometimes unsigned.
 
 This is why mixing signed and unsigned type in the same expression is not a good practice!
 
-To address this, we may cast `Num` and `Den` to `uintmax_t` first.
-We know this cast won't change the mathematical value because both of them are non-negative:
+To address this, we may just let `U` be `uintmax_t`:
+
+```cpp
+    using U = std::uintmax_t;
+```
+
+We might as well do this, since we're dealing with `std::intmax_t` anyway (from `std::ratio`).
+
+Then we cast `Num` and `Den` to `U` (which is `std::uintmax_t`). We also know that cast doesn't trigger wrap-around because both of them are checked to be non-negative:
 
 ```cpp
     U d = M - m;
 
-    std::uintmax_t num = Num;  // Ok because Num >= 0
-    std::uintmax_t den = Den;  // Ok because Den > 0
+    U num = Num;  // Ok because Num >= 0, as checked earlier
+    U den = Den;  // Ok because Den > 0, as checked earlier
     return a + sign * Integer(d * num / den);
 ```
 
-Now that both `d` and `num` are unsigned, `d * num` will definitely be unsigned.
+Now that both `d` and `num` are unsigned and have higher rank than `int`, `d * num` will definitely be unsigned.
 
-The next problem is, `d * num` still overflows in that it wraps around when it exceeds `UINTMAX_MAX`. We're going to solve this.
+The next problem is, `d * num` still wraps around when it exceeds `UINTMAX_MAX`. We need to solve this.
 
 Note that the product is already of the biggest integer type `uintmax_t`, so we can't side-step this problem by casting it to a bigger type.
 
