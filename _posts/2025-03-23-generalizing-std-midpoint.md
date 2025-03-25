@@ -19,7 +19,13 @@ It was really eye-opening. As it turns out:
   - In my x86-64 environment, `(1 + INT_MAX) / 2` yields `-1073741824`
   - `a + (b - a) / 2` triggers overflow too, just for different inputs; for example, `a = -1, b = INT_MAX`
 
-You may think, "heh, this example is clearly contrived; my inputs won't be that extreme, so `(a + b) / 2` will do just fine". Well, that's *exactly* the thought behind every integer overflow bug (and there are a lot of them). Assumptions are often violated in unexpected ways, because otherwise we would have anticipated and fixed them! In complex projects, it is not obvious the input leading up to midpoint computation. Any change to the steps prior risks breaking the assumption. For example, the seemingly unrelated change from `int` to `short`, likely for space optimization. The scariest thing is, this sort of bug is silent; the program continues with the wrong calculation.
+You may think, "heh, this example is clearly contrived; my inputs won't be that extreme, so `(a + b) / 2` will do just fine". Well, that's *exactly* the thought behind every integer overflow bug (and there are a lot of them).
+
+- Assumptions are often violated in unexpected ways, because otherwise we would have anticipated and fixed them!
+
+In complex projects, it is not obvious the input leading up to midpoint computation. Any change to the steps prior risks breaking the assumption. For example, a seemingly unrelated change from `int64_t` to `int32_t`, likely for space optimization.
+
+The scariest thing is, this sort of bug is silent; the program continues with the wrong calculation.
 
 I'd like to note that this problem is not specific to `(a + b) / 2`. The built-in arithmetic operators (`+`, `-`, `*`, `/`) share the same overflow problem: the result is not well-defined for all possible input `(a, b)`:
 
