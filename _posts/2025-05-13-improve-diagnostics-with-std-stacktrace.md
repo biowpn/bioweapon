@@ -6,7 +6,7 @@ date: 2025-05-13
 
 ## Intro
 
-One thing that makes Python convenient and debug-friendly is its exception message: it comes with stacktrace by default. Consider:
+One thing that makes Python debug-friendly is: when an exception is raised, the stacktrace is printed. Consider:
 
 ```py
 def g(n):
@@ -24,7 +24,7 @@ def main():
 main()
 ```
 
-This contrived program always throws an exception. Importantly, when it does, the stacktrace is printed:
+When the above program is executed:
 
 ```
 $ python main.py 
@@ -41,7 +41,7 @@ Traceback (most recent call last):
 Exception: That's odd
 ```
 
-In C++, however, when throwing an exception, stacktrace is not printed by default. Consider the more or less equivalent program in C++:
+Now, rewriting the program in C++:
 
 ```cpp
 #include <iostream>
@@ -76,7 +76,7 @@ terminate called after throwing an instance of 'std::runtime_error'
   what():  That's odd
 ```
 
-As we can see, only the explanatory string is printed.
+As we can see, only the explanatory string is printed. There is no stacktrace.
 
 - In fact, even this behavior - printing the explanatory string of `std::runtime_error` on termination - is not guaranteed by the standard; all implementations do this because it is incredibly helpful to debugging
 
