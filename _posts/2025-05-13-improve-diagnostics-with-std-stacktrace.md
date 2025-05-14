@@ -123,7 +123,7 @@ int main() {
 
 Then compile and run as before.
 
-- With GCC 15 and earlier, it needs to compile with `-lstdc++exp`
+- With current version of GCC (15), it needs to compile with `-lstdc++exp`
 
 The program output is now:
 
@@ -322,13 +322,21 @@ void dynamic_assert_impl(const std::stacktrace& st, bool cond, std::format_strin
 }
 ```
 
+Or just implement `dynamic_assert` entirely as macro:
+
+```cpp
+#define dynamic_assert(cond, fmt, ...)                             \
+    do {                                                           \
+        if (cond) break;                                           \
+        throw stack_runtime_error(std::format(fmt, __VA_ARGS__));  \
+    } while (0)
+```
+
 This works, and now the program produces nice diagnostic messages.
 
-- You can see the full example [here](https://godbolt.org/z/Wo74xTs4r) on compiler explorer.
+- You can see the [full example](https://godbolt.org/z/1YMe8oGfT) on compiler explorer.
 
-By the way, I do not know a way to do this without macros. 
-
-- If you have some ideas, feel free to let me know via [Github](https://github.com/biowpn/bioweapon/issues) or [Reddit](https://www.reddit.com/user/biowpn/)!
+- I do not know a way to do this without macros. If you have some ideas, feel free to let me know via [Github](https://github.com/biowpn/bioweapon/issues) or [Reddit](https://www.reddit.com/user/biowpn/)!
 
 
 
