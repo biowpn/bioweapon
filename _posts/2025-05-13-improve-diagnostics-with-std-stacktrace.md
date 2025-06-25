@@ -338,6 +338,24 @@ This works, and now the program produces nice diagnostic messages.
 
 - I do not know a way to do this without macros. If you have some ideas, feel free to let me know via [Github](https://github.com/biowpn/bioweapon/issues) or [Reddit](https://www.reddit.com/user/biowpn/)!
 
+***Update 2025-06-25***: Since this post was published, [u/dr-mrl](https://www.reddit.com/user/dr-mrl) has provided an implementation of `dynamic_assert` without macros, by cleverly leveraging deduction guide:
+
+```cpp
+template<class... Args>
+struct dynamic_assert {
+    dynamic_assert(bool cond, std::format_string<Args...> fmt, Args&&... args, const std::stacktrace& st = std::stacktrace::current()){
+        if (!cond) {
+            throw stack_runtime_error(std::format(fmt, std::forward<Args>(args)...), st);
+        } 
+    }
+};
+
+template<class... Args>
+dynamic_assert(bool, std::format_string<Args...>, Args&&...) -> dynamic_assert<Args&&...>;
+```
+
+The full example can be found [here](https://godbolt.org/z/fYcvjn53c).
+
 
 
 ## Summary
