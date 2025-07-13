@@ -39,7 +39,9 @@ OneIndirection(OneIndirection&& other) noexcept {
 
 ## The "trivial" move
 
-As it stands, the above skeleton code **is** the correct implementation! Presuming `ptr_` is the only data member of `OneIndirection`.
+As it stands, the above skeleton code **is** the correct implementation!
+
+- Presuming `ptr_` is the only data member of `OneIndirection`.
 
 Likewise, the correct move-assignment implementation should be:
 
@@ -49,9 +51,11 @@ OneIndirection& operator=(OneIndirection&& other) noexcept {
 }
 ```
 
-It may not seem intuitive at first, but remember the class invariant is: `ptr_` should *always* point to the current instance; in other words, it should *always* equal to `this`. Assignment does not change the address of the current instance (in fact, nothing does; the address of an object is stable throughout its lifetime), so `ptr_` should not be touched.
+It may not seem intuitive at first, but remember the class invariant is: `ptr_` should *always* point to the current instance; in other words, it should *always* equal to `this`. Assignment does not change the address of the current instance, so `ptr_` should not be touched.
 
-I'd also like to note about `trivially_movable`. Had we not provided the moving operations, the compiler would generate them for us (and would consider the class trivially movable), which would do something equivalent to bitwise `memcpy`:
+- In fact, *nothing* changes the address of an object; it is stable throughout lifetime of the object
+
+I'd also like to note about `trivially_movable`. Had we not provided the moving operations, the compiler would generate them for us (hence the class trivially movable), which would do something equivalent to bitwise `memcpy`:
 
 ```cpp
 // A compiler-generated move-assignment-operator would do:
