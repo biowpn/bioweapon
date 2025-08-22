@@ -42,6 +42,10 @@ What are some ways to organize the message handling code within `Widget`?
 One way is to have differently spelled functions for each message:
 
 ```cpp
+/// File: Widget.hpp
+
+#include <messages.hpp>
+
 class Widget {
     void handleA(const MessageA&);
     void handleB(const MessageB&);
@@ -60,6 +64,10 @@ But wait, C++ has overloads, surely we can make use of it:
 ### Overload
 
 ```cpp
+/// File: Widget.hpp
+
+#include <messages.hpp>
+
 class Widget {
     void handle(const MessageA&);
     void handle(const MessageB&);
@@ -114,6 +122,7 @@ class Widget {
 ```cpp
 /// File: Widget.cpp
 
+#include <Widget.hpp>
 #include <messages.hpp>
 
 template <> void Widget::handle(const MessageA&) { ... }
@@ -149,16 +158,18 @@ It has its own gotchas, though: the specializations must be visible before they 
 
 ## Dispatching Messages
 
-A closely related question is: how to dispatch messages based on type and pass them to the correct handler? A typical scenario is that these messages are sent in a type-erased way to the handler: from a file, over the network, through some inter-process channel, etc. In either case, the application just sees a sequence of bytes, and needs to recover the message type based on runtime data.
+A closely related question is: how to dispatch messages based on type and pass them to the correct handler?
 
-Often, the messages share a data member, a discriminator. What's important is that its offset is the same across all messages. For example, the first byte as a character is used to indicate the message type:
+A typical scenario is that these messages are sent in a type-erased way to the handler: from a file, over the network, through some inter-process channel, etc. In either case, the application just sees a sequence of bytes, and needs to recover the message type based on runtime data.
+
+One design is that the messages share a data member, a discriminator, whose offset is the same across all messages. For example, the first byte as a character is used to indicate the message type:
 
 ```cpp
-struct MessageA { char type; ... };  // type is always 'A'
-struct MessageB { char type; ... };  // type is always 'B'
-struct MessageC { char type; ... };  // type is always 'C'
-struct MessageD { char type; ... };  // type is always 'D'
-struct MessageE { char type; ... };  // type is always 'E'
+struct MessageA { char type; ... };  // `type` is always 'A'
+struct MessageB { char type; ... };  // `type` is always 'B'
+struct MessageC { char type; ... };  // `type` is always 'C'
+struct MessageD { char type; ... };  // `type` is always 'D'
+struct MessageE { char type; ... };  // `type` is always 'E'
 ```
 
 For systems designed this way, the `Widget` would have a generic `handle(std::span<const std::byte> msg)` that does something like this:
@@ -183,9 +194,11 @@ void Widget::handle(std::span<const std::byte> msg) {
 }
 ```
 
+- Note: the above code does not handle alignment.
+
 As we can see, there is some boilerplate. We could use macro to eliminate the duplication, or, if you recall the [Type Sequence post](https://biowpn.github.io/bioweapon/2023/10/05/type-sequence-factory-pattern.html), we could use a type list and some meta-programming trick to achieve the same. C++26 reflection offers even more ways to do this.
 
-With system designed this way, if macros are used, then neither approach is favored, since even with first approach the function name can be synthesized via token-pasting. Otherwise, overload and template plays very nicely with a type list based approach, since the name `handle` stays the same.
+With system designed this way, if macros are used, then none of three approaches is favored, since even with uniquely named function approach the function name can be synthesized via token-pasting. Otherwise, overload and template plays very nicely with a type list based approach, since the name `handle` stays the same.
 
 Alternatively, the system may provide runtime type-dispatching functions outside `Widget`. For example, it can pass a `std::variant` of messages to `Widget`, and the type-dispatching can be done via `std::visit`:
 
@@ -199,7 +212,7 @@ void Widget::handle(const AnyMessage& any_msg) {
 
 - It would be very nice if we can write `std::visit(handle, any_msg)`. Alas, short-hand closure and overload set type are not a thing. Best we can do is `std::visit(OVERLOAD(handle), any_msg)` where `OVERLOAD` is a macro that expands to the lambda
 
-With system designed this way, the overload approach and template approach are favored for the same reason.
+With system designed this way, the overload approach and template approach are favored for the same reason - `handle` is uniformly named across all messages.
 
 
 
