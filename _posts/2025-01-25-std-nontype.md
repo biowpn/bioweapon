@@ -24,7 +24,7 @@ It says `nontype`, but it also says `_t`. So is it a type or not?
 
 ## The Official Answer
 
-The [cppreference page about `std::nontype_t`]() says:
+The [cppreference page about `std::nontype_t`](https://en.cppreference.com/w/cpp/utility/nontype.html) says:
 
 > 1) The class template std::nontype_t can be used in the constructor's parameter list to match the intended tag.
 
