@@ -5,7 +5,7 @@ date: 2025-10-18
 
 ## Intro
 
-The other day, I was checking my old GitHub repos. One caught my attention — I was trying to implement Python's [`itertools`](https://docs.python.org/3/library/itertools.html) module in C++. Well, that was before even C++20, and apparently there have been a few `cpp-itertools` attempts by others too. Since then, a lot of the `itertools` features eventually *did* end up in the C++ standard library (`<ranges>`), such as `zip`, `enumerate`, `product` (`cartesian_product`), and a few more.
+The other day, I was checking my old GitHub repos. One caught my attention - I was trying to implement Python's [`itertools`](https://docs.python.org/3/library/itertools.html) module in C++. Well, that was before even C++20, and apparently there have been a few `cpp-itertools` attempts by others too. Since then, a lot of the `itertools` features eventually *did* end up in the C++ standard library (`<ranges>`), such as `zip`, `enumerate`, `product` (`cartesian_product`), and a few more.
 
 One, however, remains elusive: `combinations`, which returns `r`-length subsequences of elements from the input `iterable`.
 
@@ -156,11 +156,11 @@ Or this one:
 
 What we really want is a `rotate` - but with a *gap* in between. You can also think of it as rotating a *logical range* composed of two disjoint ranges.
 
-So we define a helper function `rotate2`:
+So we define a helper function `rotate_disjoint`:
 
 ```cpp
 template <class Iter>
-void rotate2(Iter first1, Iter last1, Iter first2, Iter last2) {
+void rotate_disjoint(Iter first1, Iter last1, Iter first2, Iter last2) {
     const auto n1 = std::distance(first1, last1);
     const auto n2 = std::distance(first2, last2);
     if (n1 <= n2) {
@@ -192,7 +192,7 @@ bool next_combination(Iter first, Iter mid, Iter last) {
     auto right = std::upper_bound(mid, last, *left);
 
     std::iter_swap(left, right);
-    rotate2(std::next(left), mid, std::next(right), last);
+    rotate_disjoint(std::next(left), mid, std::next(right), last);
 
     return true;
 }
@@ -274,7 +274,7 @@ The paper is aware of N2639, and gives performance as the reason for this choice
 
 I haven not benchmarked my version against N2639's `next_combination` or `for_each_combination`, but it may be interesting to find out whether my **binary search + gapped rotate** approach saves some comparisons.
 
-*When I have time in the future — probably. I already spent an entire Saturday night working on this instead of video games or other less mentally taxing activities. Talk about needing a life.*
+*When I have time in the future - probably. I already spent an entire Saturday night working on this instead of video games or other less mentally taxing activities. Talk about needing a life.*
 
 ## Afterword
 

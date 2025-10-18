@@ -4,45 +4,8 @@
 #include <iostream>
 #include <string>
 
-template <class BidirectionalIterator>
-bool next_combination(BidirectionalIterator first1, BidirectionalIterator last1,
-                      BidirectionalIterator first2,
-                      BidirectionalIterator last2) {
-    if ((first1 == last1) || (first2 == last2)) {
-        return false;
-    }
-    BidirectionalIterator m1 = last1;
-    BidirectionalIterator m2 = last2;
-    --m2;
-    while (--m1 != first1 && !(*m1 < *m2)) {
-    }
-    bool result = (m1 == first1) && !(*first1 < *m2);
-    if (!result) {
-        while (first2 != m2 && !(*m1 < *first2)) {
-            ++first2;
-        }
-        first1 = m1;
-        std ::iter_swap(first1, first2);
-        ++first1;
-        ++first2;
-    }
-    if ((first1 != last1) && (first2 != last2)) {
-        m1 = last1;
-        m2 = first2;
-        while ((m1 != first1) && (m2 != last2)) {
-            std ::iter_swap(--m1, m2);
-            ++m2;
-        }
-        std ::reverse(first1, m1);
-        std ::reverse(first1, last1);
-        std ::reverse(m2, last2);
-        std ::reverse(first2, last2);
-    }
-    return !result;
-}
-
 template <class Iter>
-void rotate2(Iter first1, Iter last1, Iter first2, Iter last2) {
+void rotate_disjoint(Iter first1, Iter last1, Iter first2, Iter last2) {
     const auto n1 = std::distance(first1, last1);
     const auto n2 = std::distance(first2, last2);
     if (n1 <= n2) {
@@ -76,7 +39,7 @@ bool next_combination(Iter first, Iter mid, Iter last) {
     std::iter_swap(left, right);
 
     // Correct [left + 1, mid) by doing a gapped rotate
-    rotate2(std::next(left), mid, std::next(right), last);
+    rotate_disjoint(std::next(left), mid, std::next(right), last);
 
     return true;
 }
