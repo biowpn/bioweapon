@@ -1,8 +1,8 @@
+#pragma once
 
 #include <algorithm>
-#include <cstdint>
-#include <iostream>
-#include <string>
+
+namespace biowpn {
 
 template <class Iter>
 void rotate_disjoint(Iter first1, Iter last1, Iter first2, Iter last2) {
@@ -23,40 +23,16 @@ bool next_combination(Iter first, Iter mid, Iter last) {
     if (first == mid || mid == last) {
         return false;
     }
-
-    // Find the last element in [first, mid) that is
-    // smaller than some element in [mid, last)
     auto left = std::lower_bound(first, mid, *std::prev(last));
-    // left is the first element >= max, so (left - 1) must be < max
     if (left == first) {
         std::rotate(first, mid, last);
         return false;
     }
     --left;
     auto right = std::upper_bound(mid, last, *left);
-
-    // Swap them
     std::iter_swap(left, right);
-
-    // Correct [left + 1, mid) by doing a gapped rotate
     rotate_disjoint(std::next(left), mid, std::next(right), last);
-
     return true;
 }
 
-void test_and_show(std::string str, size_t r) {
-    std::cout << "combinations(" << str << ", " << r << "):\n";
-    do {
-        std::cout << "  " << str << '\n';
-    } while (next_combination(str.begin(), str.begin() + r, str.end()));
-    std::cout << "\n";
-}
-
-int main() {
-    test_and_show("ABCDE", 0);
-    test_and_show("ABCDE", 1);
-    test_and_show("ABCDE", 2);
-    test_and_show("ABCDE", 3);
-    test_and_show("ABCDE", 4);
-    test_and_show("ABCDE", 5);
-}
+} // namespace biowpn
