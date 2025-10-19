@@ -206,52 +206,12 @@ The full code can be found [here](https://github.com/biowpn/bioweapon/blob/main/
 
 Unsurprisingly, the idea of `next_combination` arose naturally after `next_permutation`. In fact, there's an entire paper: [N2639: Algorithms for permutations and combinations, with and without repetitions](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2639.pdf) by Hervé Brönnimann, which proposes the same `next_combination` among others.
 
-```cpp
-/// This the actual helper for both `next_combination()` and `prev_combination()`:
-///     next_combination(first, mid, last) calls next_combination(first, mid, mid, last)
-///     prev_combination(first, mid, last) calls next_combination(mid, last, first, mid)
-template <class BidirectionalIterator>
-bool next_combination(BidirectionalIterator first1, BidirectionalIterator last1,
-                      BidirectionalIterator first2,
-                      BidirectionalIterator last2) {
-    if ((first1 == last1) || (first2 == last2)) {
-        return false;
-    }
-    BidirectionalIterator m1 = last1;
-    BidirectionalIterator m2 = last2;
-    --m2;
-    while (--m1 != first1 && !(*m1 < *m2)) {
-    }
-    bool result = (m1 == first1) && !(*first1 < *m2);
-    if (!result) {
-        while (first2 != m2 && !(*m1 < *first2)) {
-            ++first2;
-        }
-        first1 = m1;
-        std ::iter_swap(first1, first2);
-        ++first1;
-        ++first2;
-    }
-    if ((first1 != last1) && (first2 != last2)) {
-        m1 = last1;
-        m2 = first2;
-        while ((m1 != first1) && (m2 != last2)) {
-            std ::iter_swap(--m1, m2);
-            ++m2;
-        }
-        std ::reverse(first1, m1);
-        std ::reverse(first1, last1);
-        std ::reverse(m2, last2);
-        std ::reverse(first2, last2);
-    }
-    return !result;
-}
-```
-
 The rough steps are similar:
 1. Find the rightmost element to increment
 2. Increment it
 3. Fix the following elements
+
+Whereas I use binary search to find both the rightmost incrementable element and its swap target, Hervé’s implementation performs backward linear scans for both. We also differ in the reordering step.
 
 ### for_each_combination
 
@@ -271,6 +231,8 @@ The paper is aware of N2639, and gives performance as the reason for this choice
 > The problem with this (next_combination) interface is that it can get expensive to find the next iteration.
 
 > It is simply that the number of comparisons that need to be done to find out which swaps need to be done gets outrageously expensive. The number of swaps actually performed in both algorithms is approximately the same. At N == 100 for_each_combination is running about 14 times faster than next_combination. And that discrepancy only grows as the number of combinations increases.
+
+On an interesting note, I found `rotate_discontinuous` in Howard's implementation, which does exactly the same thing as my `rotate_disjoint`!
 
 I haven not benchmarked my version against N2639's `next_combination` or `for_each_combination`, but it may be interesting to find out whether my **binary search + gapped rotate** approach saves some comparisons.
 
