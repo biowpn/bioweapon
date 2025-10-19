@@ -242,8 +242,46 @@ I haven not benchmarked my version against N2639's `next_combination` or `for_ea
 
 *When I have time in the future - probably. I already spent an entire Saturday night working on this instead of video games or other less mentally taxing activities. Talk about needing a life.*
 
+## Benchmark
+
+Well, I spent some time cooking up a benchmark. The benchmark runs for `n = 20` and `r = 0, 1, ..., 20`; in other words, it visits all 1,048,576 subsets.
+
+I track:
+- `value comparisons`: comparing the elements
+- `value swaps`:       swapping the elements
+- `iter comparisons`:  comparing the iterators themselves
+- `iter increments`:   increment / decrement / indexing
+
+The code is [here](https://github.com/biowpn/bioweapon/blob/main/codes/next_combination/benchmark.cpp).
+
+And the result:
+
+```
+bronnimann:
+value comparisons: 11010008
+value swaps:       1864118
+iter comparisons:  19515120
+iter increments:   15961600
+
+hinnant:
+value comparisons: 0
+value swaps:       1533428
+iter comparisons:  4201518
+iter increments:   3876943
+
+biowpn:
+value comparisons: 6953102
+value swaps:       1533424
+iter comparisons:  11017066
+iter increments:   18425458
+```
+
+It's obvious that Hinnant's `for_each_combination` blows both `next_combination` out of water. No contest.
+
+When compared to Brönnimann's, my `next_combination` does more iterator increments (18M vs 15M), but otherwise fewer value comparisons (7M vs 11M), value swaps (1.5M vs 1.8M), and iterator comparisons (11M vs 19M). Not bad. There's definitely more room for optimization.
+
 ## Afterword
 
-I can see why we don't have `std::next_combination`. If Howard is right, then there's a tradeoff between consistent interfaces (`next_combination`) and performance (`for_each_combination`). Is it better to have something suboptimal in the standard library, or nothing at all? Different people will have different answers.
+I can see why we don't have `std::next_combination`. Howard is right in that there's a tradeoff between STL-consistent interfaces (`next_combination`) and performance (`for_each_combination`). Is it better to have something suboptimal in the standard library, or nothing at all? Different people will have different answers.
 
 Anyway, it was fun to implement `next_combination`. And that's the whole point.
