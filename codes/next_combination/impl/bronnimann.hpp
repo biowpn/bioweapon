@@ -1,3 +1,5 @@
+/// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2639.pdf
+
 #pragma once
 
 #include <algorithm>
