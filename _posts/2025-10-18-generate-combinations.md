@@ -213,6 +213,8 @@ The rough steps are similar:
 
 Whereas I use binary search to find both the rightmost incrementable element and its swap target, Hervé’s implementation performs backward linear scans for both. We also differ in the reordering step.
 
+I've extracted the relevant bits from the paper and pasted the code [here](https://github.com/biowpn/bioweapon/blob/main/codes/next_combination/impl/bronnimann.hpp).
+
 ### for_each_combination
 
 Another paper, [Combinations and Permutations](https://howardhinnant.github.io/combinations/combinations.html) by Howard Hinnant, suggests using a `for_each`-style interface.
@@ -233,6 +235,8 @@ The paper is aware of N2639, and gives performance as the reason for this choice
 > It is simply that the number of comparisons that need to be done to find out which swaps need to be done gets outrageously expensive. The number of swaps actually performed in both algorithms is approximately the same. At N == 100 for_each_combination is running about 14 times faster than next_combination. And that discrepancy only grows as the number of combinations increases.
 
 On an interesting note, I found `rotate_discontinuous` in Howard's implementation, which does exactly the same thing as my `rotate_disjoint`!
+
+I've copied and pasted the code [here](https://github.com/biowpn/bioweapon/blob/main/codes/next_combination/impl/hinnant.hpp).
 
 I haven not benchmarked my version against N2639's `next_combination` or `for_each_combination`, but it may be interesting to find out whether my **binary search + gapped rotate** approach saves some comparisons.
 
