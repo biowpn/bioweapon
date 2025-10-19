@@ -8,7 +8,7 @@
 #include "impl/hinnant.hpp"
 
 void test_and_show(std::string str, size_t r) {
-    using bronnimann::next_combination;
+    using biowpn::next_combination;
 
     std::cout << "combinations(" << str << ", " << r << "):\n";
     do {

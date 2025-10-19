@@ -20,7 +20,7 @@ void rotate_disjoint(Iter first1, Iter last1, Iter first2, Iter last2) {
 
 template <class Iter>
 bool next_combination(Iter first, Iter mid, Iter last) {
-    if (first == mid || mid == last) {
+    if (mid == last) {
         return false;
     }
     auto left = std::lower_bound(first, mid, *std::prev(last));

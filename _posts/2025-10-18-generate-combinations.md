@@ -179,7 +179,7 @@ Now `next_combination` becomes:
 ```cpp
 template <class Iter>
 bool next_combination(Iter first, Iter mid, Iter last) {
-    if (first == mid || mid == last) {
+    if (mid == last) {
         return false;
     }
 
@@ -192,13 +192,12 @@ bool next_combination(Iter first, Iter mid, Iter last) {
     auto right = std::upper_bound(mid, last, *left);
 
     std::iter_swap(left, right);
+
     rotate_disjoint(std::next(left), mid, std::next(right), last);
 
     return true;
 }
 ```
-
-The full code can be found [here](https://github.com/biowpn/bioweapon/blob/main/codes/next_combination).
 
 ## Prior Work
 
@@ -272,13 +271,13 @@ iter increments:   3876943
 biowpn:
 value comparisons: 6953102
 value swaps:       1533424
-iter comparisons:  11017066
-iter increments:   18425458
+iter comparisons:  9968494
+iter increments:   18425459
 ```
 
 It's obvious that Hinnant's `for_each_combination` blows both `next_combination` out of water. No contest.
 
-When compared to Brönnimann's, my `next_combination` does more iterator increments (18M vs 15M), but otherwise fewer value comparisons (7M vs 11M), value swaps (1.5M vs 1.8M), and iterator comparisons (11M vs 19M). Not bad. There's definitely more room for optimization.
+When compared to Brönnimann's, my `next_combination` does more iterator increments (18.4M vs 15.9M), but otherwise fewer value comparisons (6.9M vs 11.0M), value swaps (1.5M vs 1.8M), and iterator comparisons (9.9M vs 19.5M). Not bad. There's definitely more room for optimization.
 
 ## Afterword
 
