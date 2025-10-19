@@ -198,7 +198,7 @@ bool next_combination(Iter first, Iter mid, Iter last) {
 }
 ```
 
-The full code can be found [here](https://github.com/biowpn/bioweapon/blob/main/codes/next_combination.cpp).
+The full code can be found [here](https://github.com/biowpn/bioweapon/blob/main/codes/next_combination).
 
 ## Prior Work
 
