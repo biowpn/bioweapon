@@ -72,7 +72,7 @@ Hereafter, let's assume we cannot modify `X` and `Y`. Can we make `C` work?
 
 
 
-## Delay Construction
+## Delayed Construction
 
 The crux of the issue is that the constructor of `Y` runs *before* the `init` of `x`. So we need to delay the construction of `Y` so that it happens *after* `x.init()`.
 
@@ -181,7 +181,7 @@ class C {
 
 But now this is *worse* that the `std::optional` approach in every way. And we haven't even mentioned exception safety: what if `Y`'s constructor/destructor throws?
 
-As far as Delay Construction goes, I think `std::optional` is the most sane solution.
+As far as delayed construction goes, I think `std::optional` is the most sane solution.
 
 
 
