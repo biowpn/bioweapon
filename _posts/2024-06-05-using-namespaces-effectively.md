@@ -1,5 +1,5 @@
 ---
-title: "Using namespaces effectively"
+title: "Using Namespaces Effectively"
 date: 2024-06-05
 ---
 

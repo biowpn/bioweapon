@@ -3,6 +3,7 @@ title: "Generic Topological Sort"
 date: 2023-11-03
 ---
 
+
 ## Intro
 
 [Topological sorting](https://en.wikipedia.org/wiki/Topological_sorting) comes up often in applications such as task schedulers, dependency resolvers, and node-based computation engines. Let's try to design and implement generic topological sorting in C++.

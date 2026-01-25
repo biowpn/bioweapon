@@ -1,7 +1,8 @@
 ---
-title: "Implement K-Way Merge with std::ranges"
+title: "Implementing K-Way Merge"
 date: 2023-09-27
 ---
+
 
 ## Intro
 

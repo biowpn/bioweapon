@@ -3,6 +3,7 @@ title: "What does f(x) mean in C++?"
 date: 2024-11-12
 ---
 
+
 ## Intro
 
 It is universally agreed that C++ is a complex language. One reason is that its syntax is highly overloaded, meaning that the same code could mean many different things.

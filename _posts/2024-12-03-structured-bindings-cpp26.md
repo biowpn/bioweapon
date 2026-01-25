@@ -3,6 +3,7 @@ title: "Structured Binding Upgrades in C++26"
 date: 2024-12-03
 ---
 
+
 ## Intro
 
 [Structured binding declaration](https://en.cppreference.com/w/cpp/language/structured_binding) was first introduced in C++17.

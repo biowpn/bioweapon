@@ -3,6 +3,7 @@ title: "Printing Aggregates"
 date: 2023-11-11
 ---
 
+
 ## Intro
 
 Quoting Barry Revzin in [P2286 - Formatting Ranges](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2286r8.html):

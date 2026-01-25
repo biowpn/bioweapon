@@ -1,7 +1,8 @@
 ---
-title: "constexpr and consteval functions"
+title: "constexpr and consteval Functions"
 date: 2024-02-17
 ---
+
 
 ## Intro
 

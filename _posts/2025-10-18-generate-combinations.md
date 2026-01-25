@@ -3,6 +3,7 @@ title: "Generate Combinations in C++"
 date: 2025-10-18
 ---
 
+
 ## Intro
 
 The other day, I was checking my old GitHub repos. One caught my attention - I was trying to implement Python's [`itertools`](https://docs.python.org/3/library/itertools.html) module in C++. Well, that was before even C++20, and apparently there have been a few `cpp-itertools` attempts by others too. Since then, a lot of the `itertools` features eventually *did* end up in the C++ standard library (`<ranges>`), such as `zip`, `enumerate`, `product` (`cartesian_product`), and a few more.

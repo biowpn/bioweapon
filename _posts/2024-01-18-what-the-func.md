@@ -3,6 +3,7 @@ title: "What the `func` is that?"
 date: 2024-01-18
 ---
 
+
 ## Intro
 
 C++26 is going to be exciting.

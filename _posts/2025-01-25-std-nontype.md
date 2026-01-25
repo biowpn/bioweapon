@@ -3,6 +3,7 @@ title: "std::nontype_t: What is it, and Why?"
 date: 2025-01-25
 ---
 
+
 ## Intro
 
 The other day, I was looking at the new C++26 [`std::function_ref`](https://en.cppreference.com/w/cpp/utility/functional/function_ref) on cppreference.

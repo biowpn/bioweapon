@@ -3,6 +3,7 @@ title: "std::unique_ptr as a Generic RAII Wrapper"
 date: 2024-03-05
 ---
 
+
 *The original title of this article was "RAII all the things?",*
 *and the article didn't have enough focus. It's since been reworked*.
 

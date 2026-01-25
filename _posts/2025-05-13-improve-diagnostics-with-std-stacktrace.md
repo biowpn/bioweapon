@@ -1,5 +1,5 @@
 ---
-title: "Improve Diagnostics with std <stacktrace>"
+title: "Improve Diagnostics with <stacktrace>"
 date: 2025-05-13
 ---
 

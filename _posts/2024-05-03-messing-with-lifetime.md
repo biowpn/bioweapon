@@ -1,5 +1,5 @@
 ---
-title: "Messing with lifetime"
+title: "Messing with Lifetime"
 date: 2024-05-03
 ---
 

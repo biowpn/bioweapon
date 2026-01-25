@@ -1,7 +1,8 @@
 ---
-title: "Mixing N-phase initialization"
+title: "Mixing N-phase Initialization"
 date: 2026-01-25
 ---
+
 
 ## Intro
 
