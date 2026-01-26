@@ -117,9 +117,9 @@ class C {
 };
 ```
 
-This feels hacky - an `optional` that is always engaged so it's not really *optional* in the literal sense - but it works! There's no heap allocation or indirection. There is still that extra `bool` member and the `->` awkwardness every time `y` is used. Can we do away with those as well?
+This feels hacky - an `optional` that is always engaged so it's not really *optional* in the literal sense - but it works! There's no heap allocation or indirection. There is still that extra `bool` from `optional` and the `->` awkwardness every time `y` is used. Can we do away with those as well?
 
-Now we're entering the non-standard (read: dangerous) territory. We don't want automatic construction, and we don't want indirection. That leaves us with one way - raw storage and handling the construction (and destruction!) ourselves:
+Now we're entering the non-standard (read: dangerous) territory. We don't want automatic construction, and we don't want indirection. That leaves us with one way - raw storage and manual construction (and destruction!):
 
 ```cpp
 class C {
@@ -146,17 +146,19 @@ class C {
 };
 ```
 
-There are a few issues with this solution. One, it's ugly. Two, it hasn't handled copying and moving yet - which means more ugly code or straight up making `C` not copyable and/or not movable. Three, as far as I know, there is UB here:
+There are a few issues with this solution. One, it's ugly. Two, it doesn't yet handle copying and moving. Three, as far as I know, there is UB here:
 
 ```cpp
     return *reinterpret_cast<Y*>(y_storage);
 ```
 
-It has to do with pointer interconvertibility. In short, pointer to an object's storage is not interconvertible to a pointer to that object. I think [P1839](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2025/p1839r7.html) is trying to relax rules in this area a bit, that paper only permits read-only operations; we're likely using `y` in a mutable way, so even P1839 cannot save us.
+It has to do with pointer interconvertibility. In short, pointer to an object's storage is *not* interconvertible to a pointer to that object.
 
+- I think [P1839](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2025/p1839r7.html) is trying to relax rules in this area a bit. That said, P1839 only permits read-only operations; we're likely using `y` in a mutable way, so even P1839 cannot save us.
 - `std::start_lifetime_as` cannot help us here either, since `Y` is not a trivially copyable type.
+- And no, neither does `std::launder` apply here.
 
-The 'fix' is to save the pointer returned by placement new, and to access Y only through that pointer:
+The 'fix' is to save the pointer returned by placement new and to access Y only through that pointer:
 
 ```cpp
 class C {
@@ -171,7 +173,7 @@ class C {
         // ...
         auto r = x.init(path, size);
 
-        py = new (y_storage) Y(x.data(), x.size(), r);
+        py = new (y_storage) Y(x.data(), x.size(), r);  // <--
     }
 
     ~C() {
@@ -245,7 +247,9 @@ assert( x2.data() == ptr );  // key to correctness
 I prefer the delegating constructor approach over delayed construction. I would generalize this further: **RAII members should preferably be initialized outside the containing class and moved in**. This separates concerns and makes the design more modular.
 
 ```cpp
-using file_ptr = std::unique_ptr<FILE, decltype( [](FILE* fp) { if (fp) std::fclose(fp); } )>;
+using file_ptr = std::unique_ptr<FILE, 
+                                 decltype([](FILE* fp) { if (fp) std::fclose(fp); })
+                                >;
 
 class Copy {
     file_ptr i_fp;
