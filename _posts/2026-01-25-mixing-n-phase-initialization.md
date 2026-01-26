@@ -278,7 +278,7 @@ class Copy {
 
 ## Immediate Lambda
 
-After this post is published, I received a feedback that I could use an immediate lambda to initialize `y` as such:
+After this post is published, I received a feedback from my coworker [Bernard](https://github.com/btzy) that I could use an immediate lambda to initialize `y` as such:
 
 ```cpp
 class C {
@@ -300,7 +300,7 @@ class C {
 };
 ```
 
-No helper function, no delegating constructor, just in-place construction! In fact, this doesn't even require `Y` being move-constructible, thanks to [copy elision](https://en.cppreference.com/w/cpp/language/copy_elision.html).
+No helper function, no delegating constructor, just in-place construction! In fact, this doesn't even require `Y` being move-constructible, thanks to [copy elision](https://en.cppreference.com/w/cpp/language/copy_elision.html). Neat!
 
 
 
