@@ -186,9 +186,9 @@ As far as delayed construction goes, I think `std::optional` is the most sane so
 
 
 
-## Delegating Constructor
+## Separate Construction
 
-What if I want `y` as a direct member of `C`, not `std::optional` or any other wrapper?
+What if I want *just* `y` as a member of `C`, not `std::optional` or any other wrapper?
 
 Looking from another angle, I could see the problem as a limitation of the member initialization list. They can only invoke constructors, and we cannot introduce temporary variables to save the result of `x.init()`.
 
@@ -213,7 +213,7 @@ std::pair<X, Y> create_xny(const Config& config) {
 }
 ```
 
-Why, yes, we have **delegating constructor**:
+Why, yes, we have delegating constructor:
 
 ```cpp
 class C {
@@ -232,7 +232,7 @@ class C {
 };
 ```
 
-This works, as long as `X` and `Y` are movable, and for `X::data()` is stable:
+This works, as long as `X` and `Y` are movable, and `X::data()` is stable:
 
 ```cpp
 X x1;
@@ -242,7 +242,7 @@ X x2 = std::move(x1);
 assert( x2.data() == ptr );  // key to correctness
 ```
 
-I prefer the delegating constructor approach over delayed construction. I would generalize this further: **RAII members should preferably be initialized outside the containing class**. This separates concerns and makes the design more modular.
+I prefer the delegating constructor approach over delayed construction. I would generalize this further: **RAII members should preferably be initialized outside the containing class and moved in**. This separates concerns and makes the design more modular.
 
 ```cpp
 using file_ptr = std::unique_ptr<FILE, decltype( [](FILE* fp) { if (fp) std::fclose(fp); } )>;
@@ -272,6 +272,34 @@ class Copy {
 
 
 
+## Immediate Lambda
+
+After this post is published, I received a feedback that I could use an immediate lambda to initialize `y` as such:
+
+```cpp
+class C {
+    X x;
+    Y y;
+
+  public:
+    C(const Config& config): 
+        y(
+            [&]{
+                    const char* path;
+                    size_t size;
+                    // ... use config to fill `path` and `size` ...
+                    auto r = x.init(path, size);
+                    return Y(x.data(), x.size(), r);
+            }()
+        )
+    {}
+};
+```
+
+No helper function, no delegating constructor, just in-place construction! In fact, this doesn't even require `Y` being move-constructible, thanks to [copy elision](https://en.cppreference.com/w/cpp/language/copy_elision.html).
+
+
+
 ## Afterword
 
-The class member initialization list is sometimes too restrictive to handle dependencies between one-phase and two-phase initialized members. Aside from delaying construction via wrappers, we can utilize helper functions and delegating constructors to "move-in" fully initialized instances. However, this approach relies heavily on move semantics, so ensure your move operations maintain internal invariants.
+The class member initialization list is sometimes too restrictive to handle dependencies between one-phase and two-phase initialized members. Aside from delaying construction via wrappers, we can utilize helper functions and delegating constructors to "move-in" fully initialized instances. While this approach has clearer separation of concerns, it relies heavily on move semantics. An alternative is using immediate lambdas which does not rely on move semantics at all, at the slight cost of heavier constructor.
