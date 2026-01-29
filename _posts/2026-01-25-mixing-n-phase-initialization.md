@@ -156,7 +156,8 @@ It has to do with pointer interconvertibility. In short, pointer to an object's 
 
 - I think [P1839](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2025/p1839r7.html) is trying to relax rules in this area a bit. That said, P1839 only permits read-only operations; we're likely using `y` in a mutable way, so even P1839 cannot save us.
 - `std::start_lifetime_as` cannot help us here either, since `Y` is not a trivially copyable type.
-- And no, neither does `std::launder` apply here.
+- ~~And no, neither does `std::launder` apply here~~.
+    - **Update**: `std::launder` is appropriate here.
 
 The 'fix' is to save the pointer returned by placement new and to access Y only through that pointer:
 
