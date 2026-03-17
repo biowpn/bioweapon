@@ -40,7 +40,7 @@ How would you implement such a function, `circular_distance`?
 
 ## The Solution
 
-It may seem tricky at first, since we need to consider integer overflows, the valid representation range of `int32_t`/`uint32_t`, and even perhaps multiple branches to handle different case, and so on. Some strategies may even upcast to `int64_t`, do the math there, and cast back.
+It may seem tricky at first, since we need to consider integer overflows, the valid representation range of `int32_t`/`uint32_t`, and even perhaps multiple branches to handle different cases, and so on. Some strategies may even upcast to `int64_t`, do the math there, and cast back.
 
 As it turns out, there is a surprisingly simple implementation:
 
@@ -58,23 +58,23 @@ But why does it work?
 
 ## The Math
 
-Let `N` be the mathematical number represented. Casting a `uint32_t` to a `int32_t` has the effect of:
+Let `N` be the mathematical number represented. Casting a `uint32_t` to an `int32_t` has the effect of:
 - If `N` is less than `2^31`, the number is unchanged.
 - Otherwise, the number becomes `N - 2^32`.
 
-Now, back to `circular_distance`. Let's consider the case where `a <= b`. If the return type was `uint32_t`, then `circular_distance(a, b)` would always return a non-negative value, implying `b` is always ahead of (or equals to) `a`. But if `b` is *too ahead* of `a`, then we treat it as it's *behind* instead:
+Now, back to `circular_distance`. Let's consider the case where `a <= b`. If the return type was `uint32_t`, the result would always be non-negative, implying `b` is always ahead of (or equal to) `a`. But if `b` is **too far ahead** of `a`, then we treat it as it's **behind** instead:
 
-- **"Too ahead" = "Behind"**
+- **"Too Ahead" = "Behind"**
 
 Consider `a = 0, b = 4294967295`. It takes `a` 4294967295 forward steps to reach `b`, but it takes `b` only 1 forward step to reach `a`.
 
-So we need choose some **cutoff**, `k`. If `b` is at least `k` steps ahead, we would consider it **behind** instead:
-- If `d = b - a` is less than `k`, the distance is `d`.
-- Otherwise, the distance is `d - 2^32`
+So we need to choose some **cutoff**, `k`. If `b` is at least `k` steps ahead, we would consider it **behind** instead:
+- If `d = b - a` is less than `k`, the circular distance is `d`.
+- Otherwise, the circular distance is `d - 2^32`
 
-Where have we seen this before? If `k` happens to be `2^31`, then above is just casting `uint32_t` to `int32_t`!
+Where have we seen this before? If `k` happens to be `2^31`, then the above is just casting `uint32_t` to `int32_t`!
 
-So really, it is the coincidence that the cut off `k` happens to be the boundary where the second half of `uint32_t` values "map" to the negative half of the `int32_t` space.
+So really, it is the coincidence that the cutoff `k` happens to be the boundary where the second half of `uint32_t` values "map" to the negative half of the `int32_t` space.
 
 What if `a > b`? Well, we have:
 
@@ -103,7 +103,7 @@ In our 32-bit integer cases:
 
 But not all applications need the full representation range of an integer type, and `n` may not be a power of 2.
 
-For example, analogy clock:
+For example, analog clock:
 - `n = 12`
 - `m = -6`
 
@@ -122,7 +122,7 @@ int clock_distance(int a, int b) {
 }
 ```
 
-What we want for circular distance calculation is really *rounds towards negative infinity*, i.e. flooring.
+What we want for circular distance calculation is really *rounding towards negative infinity*, i.e. flooring.
 
 Thankfully, we have a paper [P3724 - Integer division](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p3724r3.html) that proposed various integer division functions with all the different rounding modes, including:
 
@@ -131,4 +131,4 @@ Thankfully, we have a paper [P3724 - Integer division](https://www.open-std.org/
     constexpr div_result<T> div_rem_to_neg_inf(T x, T y);
 ```
 
-I would be more than glad to see this paper lands in the standard.
+I would be more than glad to see this paper land in the standard.
